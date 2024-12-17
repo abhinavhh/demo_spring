@@ -29,5 +29,13 @@ build/
 !**/src/main/**/build/
 !**/src/test/**/build/
 
+
+target/
+.idea/
+*.iml
+*.log
+.DS_Store
+
+
 ### VS Code ###
 .vscode/
