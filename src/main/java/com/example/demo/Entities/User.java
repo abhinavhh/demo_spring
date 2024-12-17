@@ -7,16 +7,16 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 
 @Entity
-public class User {
+public class User{
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(unique = true)
+    @Column(name = "username" , unique = true)
     private String username;
 
-    @SuppressWarnings("unused")
+    @Column(name = "password")
     private String password;
-    @SuppressWarnings("unused")
+    @Column(name = "role")
     private String role = "USER";
 }

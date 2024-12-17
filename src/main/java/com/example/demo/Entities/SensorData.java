@@ -1,32 +1,53 @@
 package com.example.demo.Entities;
 
-
-// ENTITY : mark this class to a JPA entity this means it map to a table in the database
-
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
-import org.hibernate.annotations.CreationTimestamp;
 
+import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.Table;
 
 @Entity
-
-// SensorData represents the table
-public class SensorData{
-
+@Table(name = "sensor_data")
+public class SensorData {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @SuppressWarnings("unused")
-    private String sensorType;
-    @SuppressWarnings("unused")
-    private BigDecimal value;
+    @Column(name = "sensor_type")
 
-    @CreationTimestamp
-    private LocalDateTime timestamp;
+    private String sensorType; // Remove `@SuppressWarnings`
+
+    @Column(name = "value")
+    private BigDecimal value; // Remove `@SuppressWarnings`
+
+    @Column(name = "time_stamp")
+    private LocalDateTime timeStamp;
+
+
+    public String getSensorType() {
+        return sensorType;
+    }
+
+    public BigDecimal getSensorValue(){
+        return value;
+    }
+
+    public LocalDateTime getTimeStamp(){
+        return timeStamp;
+    }
+    @Override
+    public String toString() {
+        return "SensorData{" +
+                "id=" + id +
+                ", sensorType='" + sensorType + '\'' +
+                ", timeStamp=" + timeStamp +
+                ", value=" + value +
+                '}';
+    }
+    // Getters and Setters
 }
