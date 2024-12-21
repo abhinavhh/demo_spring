@@ -19,4 +19,8 @@ public class SensorDataService {
      public List<SensorData> getSensorDataByType(String type){
         return sensorDataRepository.findBySensorType(type);
      }
+     public Double getLatestSensorData(String type){
+         Double value = sensorDataRepository.getSensorValue();
+         return value;
+     }
 }

@@ -1,5 +1,6 @@
 package com.example.demo.Controllers;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import org.springframework.http.ResponseEntity;
@@ -37,5 +38,20 @@ public class SensorDataController {
             return ResponseEntity.noContent().build();
         }
         return ResponseEntity.ok(sensorData);
+    }
+
+    @GetMapping("/notification")
+    public ResponseEntity<List<String>> getNotifications(){
+        List<String> notifications = new ArrayList<>();
+        Double currentTemperature = sensorDataService.getLatestSensorData("temperature");
+        Double currentSoilMoisture = sensorDataService.getLatestSensorData("soilMoisture");
+
+        if(currentSoilMoisture > 80){
+            notifications.add("High Soil Moisture Detected");
+        }
+        if(currentTemperature > 35.5){
+            notifications.add("High Temperature Detected");
+        }
+        return ResponseEntity.ok(notifications);
     }
 }

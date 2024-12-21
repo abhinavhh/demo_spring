@@ -5,7 +5,7 @@
 	<parent>
 		<groupId>org.springframework.boot</groupId>
 		<artifactId>spring-boot-starter-parent</artifactId>
-		<version>3.4.0</version>
+		<version>3.4.1</version>
 		<relativePath/> <!-- lookup parent from repository -->
 	</parent>
 	<groupId>com.example</groupId>
@@ -16,6 +16,7 @@
 	<url/>
 	<licenses>
 		<license/>
+		
 	</licenses>
 	<developers>
 		<developer/>
@@ -32,8 +33,7 @@
 	<dependencies>
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
-			<artifactId>spring-boot-starter</artifactId>
-			<version>3.4.0</version> <!-- Replace with your desired version -->
+			<artifactId>spring-boot-starter</artifactId> <!-- Replace with your desired version -->
     	</dependency>
 		<dependency>
 			<groupId>org.springframework.boot</groupId>

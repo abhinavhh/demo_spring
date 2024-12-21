@@ -11,4 +11,5 @@ import com.example.demo.Entities.SensorData;
 public interface SensorDataRepository extends JpaRepository<SensorData, Long>{
     List<SensorData> findAll();
     List<SensorData> findBySensorType(String type);
+    Double getSensorValue();
 }
