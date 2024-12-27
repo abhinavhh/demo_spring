@@ -1,12 +1,10 @@
 package com.example.demo.Repositories;
 
-import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.stereotype.Repository;
-
 import com.example.demo.Entities.IrrigationSettings;
+import org.springframework.data.jpa.repository.JpaRepository;
 
-@Repository
-public interface IrrigationSettingsRepository extends JpaRepository<IrrigationSettings, Long>{
-    
-    
+import java.util.List;
+
+public interface IrrigationSettingsRepository extends JpaRepository<IrrigationSettings, Long> {
+    List<IrrigationSettings> findByUserId(Long userId);
 }

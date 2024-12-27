@@ -1,42 +1,46 @@
 package com.example.demo.Controllers;
 
+import com.example.demo.Entities.Crops;
+import com.example.demo.Entities.Users;
+import com.example.demo.Repositories.CropRepository;
+import com.example.demo.Repositories.UserRepository;
+
+import org.springframework.beans.factory.annotation.Autowired;
+
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.web.bind.annotation.*;
+
 import java.util.List;
 
-import org.springframework.http.ResponseEntity;
-import org.springframework.stereotype.Controller;
-import org.springframework.web.bind.annotation.DeleteMapping;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
-
-import com.example.demo.Entities.Crop;
-import com.example.demo.Services.CropService;
-@Controller
 @RestController
 @RequestMapping("/api/crops")
 public class CropController {
-    
-    private final CropService cropService;
 
-    public CropController(CropService cropService){
-        this.cropService = cropService;
-    }
+    @Autowired
+    private CropRepository cropRepository;
+
+    @Autowired
+    private UserRepository userRepository;
+
     @GetMapping
-    public ResponseEntity<List<Crop>> getAllCrops(){
-        return ResponseEntity.ok(cropService.getAllCrops());
+    public List<Crops> getCrops() {
+        String username = SecurityContextHolder.getContext().getAuthentication().getName();
+        Users user = userRepository.findByUsername(username).orElseThrow();
+        return cropRepository.findByUserId(user.getId());
     }
 
     @PostMapping
-    public ResponseEntity<Crop> addCrop(@RequestBody Crop crop){
-        return ResponseEntity.ok(cropService.addCrop(crop));
+    public String addCrop(@RequestBody Crops crop) {
+        String username = SecurityContextHolder.getContext().getAuthentication().getName();
+        Users user = userRepository.findByUsername(username).orElseThrow();
+        crop.setUser(user);
+        cropRepository.save(crop);
+        return "Crop added successfully";
     }
-    @DeleteMapping("/{id}")
-    public ResponseEntity<String> deleteCrop(@PathVariable Long id){
 
-        cropService.deleteCrop(id);
-        return ResponseEntity.ok("Crop Deleted");
-    }
+    // @DeleteMapping("/{id}")
+    // public ResponseEntity<String> deleteCrop(@PathVariable Long id) {
+    //     cropService.deleteCrop(id);
+    //     return ResponseEntity.ok("Crop deleted successfully");
+    // }
 }

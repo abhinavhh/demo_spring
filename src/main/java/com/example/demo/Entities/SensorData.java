@@ -1,53 +1,74 @@
 package com.example.demo.Entities;
 
-import java.math.BigDecimal;
+import jakarta.persistence.*;
+import lombok.Getter;
+import lombok.Setter;
+
 import java.time.LocalDateTime;
 
-
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.Table;
-
 @Entity
-@Table(name = "sensor_data")
+@Getter
+@Setter
 public class SensorData {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "sensor_type")
+    @ManyToOne
+    @JoinColumn(name = "user_id")
+    private Users user;
 
-    private String sensorType; // Remove `@SuppressWarnings`
+    private String sensorType; // e.g., "temperature", "humidity", "soilMoisture"
+    private Double value;
 
-    @Column(name = "value")
-    private BigDecimal value; // Remove `@SuppressWarnings`
+    private LocalDateTime timestamp;
 
-    @Column(name = "time_stamp")
-    private LocalDateTime timeStamp;
+    public SensorData() {}
 
+    public SensorData(String sensorType, Double value, Users user) {
+        this.sensorType = sensorType;
+        this.value = value;
+        this.user = user;
+    }
+
+    // Getters and Setters
+    public Long getId() {
+        return id;
+    }
+
+    public void setId(Long id) {
+        this.id = id;
+    }
 
     public String getSensorType() {
         return sensorType;
     }
 
-    public BigDecimal getSensorValue(){
+    public void setSensorType(String sensorType) {
+        this.sensorType = sensorType;
+    }
+
+    public Double getValue() {
         return value;
     }
 
-    public LocalDateTime getTimeStamp(){
-        return timeStamp;
+    public void setValue(Double value) {
+        this.value = value;
     }
-    @Override
-    public String toString() {
-        return "SensorData{" +
-                "id=" + id +
-                ", sensorType='" + sensorType + '\'' +
-                ", timeStamp=" + timeStamp +
-                ", value=" + value +
-                '}';
+
+    public LocalDateTime getTimestamp() {
+        return timestamp;
     }
-    // Getters and Setters
+
+    public void setTimestamp(LocalDateTime timestamp) {
+        this.timestamp = timestamp;
+    }
+
+    public Users getUser() {
+        return user;
+    }
+
+    public void setUser(Users user) {
+        this.user = user;
+    }
 }

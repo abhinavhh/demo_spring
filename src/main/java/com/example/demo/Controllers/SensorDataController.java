@@ -1,57 +1,79 @@
 package com.example.demo.Controllers;
 
-import java.util.ArrayList;
+import com.example.demo.Entities.SensorData;
+import com.example.demo.Entities.Users;
+import com.example.demo.Repositories.SensorDataRepository;
+import com.example.demo.Repositories.UserRepository;
+import com.example.demo.Services.NotificationService;
+
+import org.springframework.beans.factory.annotation.Autowired;
+
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.web.bind.annotation.*;
+
+import java.time.LocalDateTime;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
 
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
-
-import com.example.demo.Entities.SensorData;
-import com.example.demo.Services.SensorDataService;
-
 @RestController
-@RequestMapping("api/sensor")
+@RequestMapping("/api/sensor")
 public class SensorDataController {
 
-    private final SensorDataService sensorDataService;
+    @Autowired
+    private SensorDataRepository sensorDataRepository;
+    @Autowired
+    private UserRepository userRepository;
+    @Autowired
+    private NotificationService notificationService;
 
-    public SensorDataController(SensorDataService sensorDataService) {
-        this.sensorDataService = sensorDataService;
+    private Users getCurrentUser(){
+        String username = SecurityContextHolder.getContext().getAuthentication().getName();
+        return userRepository.findByUsername(username).orElseThrow();
     }
 
-    @GetMapping("/all")
-    public ResponseEntity<List<SensorData>> getAllSensorData() {
-
-        List<SensorData> data = sensorDataService.getAllSensorData();
-        System.out.println("retrieved data : " + data);
-        return ResponseEntity.ok(data);
+    @GetMapping("/latest")
+    public List<SensorData> getLatestSensorData() {
+        Users user = getCurrentUser();
+        return sensorDataRepository.findByUserIdAndSensorTypeOrderByTimestampDesc(user.getId(), "temperature");
     }
 
     @GetMapping("/{type}")
-    public ResponseEntity<List<SensorData>> getSensorDataByType(@PathVariable String type){
-        List<SensorData> sensorData = sensorDataService.getSensorDataByType(type);
-        System.out.println(sensorData);
-        if(sensorData.isEmpty()){
-            return ResponseEntity.noContent().build();
+    public List<SensorData> getSensorDataByType(
+        @PathVariable String type,
+        @RequestParam String range
+    ) {
+        Users user = getCurrentUser();
+        LocalDateTime end = LocalDateTime.now();
+        LocalDateTime start;
+
+        switch (range.toLowerCase()) {
+            case "day":
+                start = end.minus(1, ChronoUnit.DAYS);
+                break;
+            case "week":
+                start = end.minus(1, ChronoUnit.WEEKS);
+                break;
+            case "month":
+                start = end.minus(1, ChronoUnit.MONTHS);
+                break;
+            default:
+                throw new IllegalArgumentException("Invalid range: " + range);
         }
-        return ResponseEntity.ok(sensorData);
+
+        return sensorDataRepository.findByUserIdAndSensorTypeAndTimestampBetween(
+            user.getId(), type, start, end
+        );
     }
+    @PostMapping
+    public String addSensorData(@RequestBody SensorData sensorData) {
+        Users user = getCurrentUser();
+        sensorData.setUser(user);
+        sensorData.setTimestamp(LocalDateTime.now());
+        sensorDataRepository.save(sensorData);
 
-    @GetMapping("/notification")
-    public ResponseEntity<List<String>> getNotifications(){
-        List<String> notifications = new ArrayList<>();
-        Double currentTemperature = sensorDataService.getLatestSensorData("temperature");
-        Double currentSoilMoisture = sensorDataService.getLatestSensorData("soilMoisture");
+        // Analyze sensor data for notifications
+        notificationService.analyzeSensorData(user);
 
-        if(currentSoilMoisture > 80){
-            notifications.add("High Soil Moisture Detected");
-        }
-        if(currentTemperature > 35.5){
-            notifications.add("High Temperature Detected");
-        }
-        return ResponseEntity.ok(notifications);
+        return "Sensor data added successfully";
     }
 }

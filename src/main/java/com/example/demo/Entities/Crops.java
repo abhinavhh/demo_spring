@@ -1,58 +1,79 @@
 package com.example.demo.Entities;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
+import jakarta.persistence.*;
+import lombok.Getter;
+import lombok.Setter;
 
 @Entity
-public class Crop {
+@Getter
+@Setter
+@Table(name = "crops")
+public class Crops {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-    private String name; // name of the crop
-    private Double minTempearture;
+    @ManyToOne
+    @JoinColumn(name = "user_id", nullable = false)
+    
+    private Users user;
+
+    private String name;
+
+    private String description;
+
+    private String imageUrl;
+
+    private Double minTemperature;
     private Double maxTemperature;
     private Double minHumidity;
     private Double maxHumidity;
     private Double minSoilMoisture;
-    private Double maxSoilMoisture; 
+    private Double maxSoilMoisture;
 
-    //Constructor
-    public Crop(){}
 
-    public Crop(String name, Double minTemperature , Double maxTemperature, Double minHumidity, Double maxHumidity, Double minSoilMoisture, Double maxSoilMoisture){
-        
+    public Crops() {}
+
+    public Crops(String name, Double minTemperature, Double maxTemperature, Double minHumidity, Double maxHumidity, Double minSoilMoisture, Double maxSoilMoisture, Users user) {
         this.name = name;
-        this.minTempearture = minTemperature;
+        this.minTemperature = minTemperature;
         this.maxTemperature = maxTemperature;
         this.minHumidity = minHumidity;
         this.maxHumidity = maxHumidity;
         this.minSoilMoisture = minSoilMoisture;
         this.maxSoilMoisture = maxSoilMoisture;
+        this.user = user;
     }
-    //Getters and Setters
-    public Long getId(){
+
+    // Getters and Setters
+    public Long getId() {
         return id;
     }
-    public void setId(Long id){
+
+    public void setId(Long id) {
         this.id = id;
     }
-    public String getname(){
+
+    public String getName() {
         return name;
     }
-    public void setname(String name){
+
+    public void setName(String name) {
         this.name = name;
     }
-    public Double getMinTemperature(){
-        return minTempearture;
+
+    public Double getMinTemperature() {
+        return minTemperature;
     }
-    public void setMinTemperature(Double minTemperature){
-        this.minTempearture = minTemperature;
+
+    public void setMinTemperature(Double minTemperature) {
+        this.minTemperature = minTemperature;
     }
-    public Double getMaxTemperature(){
+
+    public Double getMaxTemperature() {
         return maxTemperature;
     }
+
     public void setMaxTemperature(Double maxTemperature) {
         this.maxTemperature = maxTemperature;
     }
@@ -87,5 +108,13 @@ public class Crop {
 
     public void setMaxSoilMoisture(Double maxSoilMoisture) {
         this.maxSoilMoisture = maxSoilMoisture;
+    }
+
+    public Users getUser() {
+        return user;
+    }
+
+    public void setUser(Users user) {
+        this.user = user;
     }
 }
