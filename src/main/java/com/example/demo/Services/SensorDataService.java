@@ -2,39 +2,44 @@ package com.example.demo.Services;
 
 import com.example.demo.Entities.SensorData;
 import com.example.demo.Repositories.SensorDataRepository;
+
+
+import reactor.core.publisher.Flux;
+
 import org.springframework.stereotype.Service;
 
+import java.time.Duration;
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Service
 public class SensorDataService {
 
     private final SensorDataRepository sensorDataRepository;
-    private final UserService userService;
 
     public SensorDataService(SensorDataRepository sensorDataRepository, UserService userService) {
         this.sensorDataRepository = sensorDataRepository;
-        this.userService = userService;
     }
 
-    public void saveSensorData(SensorData sensorData) {
-        sensorData.setUser(userService.getCurrentUser());
-        sensorDataRepository.save(sensorData);
+    public SensorData saveSensorData(SensorData sensorData) {
+        sensorData.setTimestamp(LocalDateTime.now());
+        return sensorDataRepository.save(sensorData);
     }
 
     public List<SensorData> getSensorData(String sensorType) {
-        Long userId = userService.getCurrentUser().getId();
-        return sensorDataRepository.findByUserIdAndSensorTypeOrderByTimestampDesc(userId, sensorType);
+        
+        return sensorDataRepository.findAll();
     }
-    public SensorData getLatestSensorData(String sensorType) {
-        Long userId = userService.getCurrentUser().getId();
-        List<SensorData> sensorDataList = sensorDataRepository.findByUserIdAndSensorTypeOrderByTimestampDesc(userId, sensorType);
-        return sensorDataList.isEmpty() ? null : sensorDataList.get(0); // Return the latest data or null if none exists
+    public List<SensorData> getAllSensorData() {
+        return sensorDataRepository.findAll();
     }
 
     public List<SensorData> getSensorDataByType(String sensorType) {
-        Long userId = userService.getCurrentUser().getId();
-        return sensorDataRepository.findByUserIdAndSensorTypeOrderByTimestampDesc(userId, sensorType);
+        return sensorDataRepository.findBySensorType(sensorType);
+    }
+
+    public Flux<SensorData> getAllSensorDataStream() {
+        return Flux.fromIterable(sensorDataRepository.findAll()).delayElements(Duration.ofSeconds(2));
     }
 
     

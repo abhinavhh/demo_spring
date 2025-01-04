@@ -25,10 +25,10 @@ public class SensorData {
 
     public SensorData() {}
 
-    public SensorData(String sensorType, Double value, Users user) {
+    public SensorData(String sensorType, Double value) {
         this.sensorType = sensorType;
         this.value = value;
-        this.user = user;
+
     }
 
     // Getters and Setters
@@ -62,13 +62,5 @@ public class SensorData {
 
     public void setTimestamp(LocalDateTime timestamp) {
         this.timestamp = timestamp;
-    }
-
-    public Users getUser() {
-        return user;
-    }
-
-    public void setUser(Users user) {
-        this.user = user;
     }
 }

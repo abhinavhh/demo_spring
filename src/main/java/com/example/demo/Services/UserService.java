@@ -1,64 +1,71 @@
 package com.example.demo.Services;
 
-import com.example.demo.Entities.IrrigationSettings;
-import com.example.demo.Entities.Users;
-import com.example.demo.Repositories.UserRepository;
-import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.crypto.password.PasswordEncoder;
+import java.time.LocalDateTime;
+import java.util.Optional;
+import java.util.UUID;
+
 import org.springframework.stereotype.Service;
 
+import com.example.demo.Entities.ResetToken;
+import com.example.demo.Entities.Users;
+import com.example.demo.Repositories.ResetTokenRepository;
+import com.example.demo.Repositories.UserRepository;
+
 @Service
-public class UserService {
 
-    private final UserRepository userRepository;
-    private final PasswordEncoder passwordEncoder;
+public class UserService{
 
-    public UserService(UserRepository userRepository, PasswordEncoder passwordEncoder) {
+
+    private final UserRepository userRepository ;
+    private final ResetTokenRepository resetTokenRepository;
+
+    public UserService(UserRepository userRepository, ResetTokenRepository resetTokenRepository){
         this.userRepository = userRepository;
-        this.passwordEncoder = passwordEncoder;
+        this.resetTokenRepository = resetTokenRepository;
     }
 
-    public Users getCurrentUser() {
-        String username = SecurityContextHolder.getContext().getAuthentication().getName();
-        System.out.println("The username is : "+username);
-        return userRepository.findByUsername(username)
-                .orElseThrow(() -> new RuntimeException("User not found"));
-    }
+    public String registerUser(Users user){
 
-    public void updateUserSettings(IrrigationSettings settings) {
-        Users currentUser = getCurrentUser();
-    
-        // Update profile details from the associated user of the IrrigationSettings
-        if (settings.getUser().getUsername() != null) {
-            currentUser.setUsername(settings.getUser().getUsername());
+        if(userRepository.findByUsername(user.getUsername()).isPresent()){
+            return "Username already exists";
         }
-        if (settings.getUser().getEmail() != null) {
-            currentUser.setEmail(settings.getUser().getEmail());
-        }
-    
-        // Save changes to the database
-        userRepository.save(currentUser);
-    }
-    
-
-    public void updateName(String newName) {
-        Users user = getCurrentUser();
-        user.setUsername(newName);
         userRepository.save(user);
+        return "User Registration successfull";
     }
 
-    public boolean changePassword(String oldPassword, String newPassword) {
-        Users user = getCurrentUser();
-        if (passwordEncoder.matches(oldPassword, user.getPassword())) {
-            user.setPassword(passwordEncoder.encode(newPassword));
-            userRepository.save(user);
-            return true;
+    public String generatePasswordResetToken(String email) {
+        Optional<Users> user = userRepository.findByEmail(email);
+        if (user.isEmpty()) {
+            return "User not found";
         }
-        return false;
+
+        ResetToken resetToken = new ResetToken();
+        resetToken.setEmail(email);
+        resetToken.setToken(UUID.randomUUID().toString());
+        resetToken.setExpiryDate(LocalDateTime.now().plusMinutes(30));
+        resetTokenRepository.save(resetToken);
+
+        return "Password reset token generated successfully. Token: " + resetToken.getToken();
     }
 
-    public void deleteCurrentUser() {
-        Users user = getCurrentUser();
-        userRepository.delete(user);
+    public String resetPassword(String token, String newPassword) {
+        Optional<ResetToken> resetToken = resetTokenRepository.findByToken(token);
+
+        if (resetToken.isEmpty() || resetToken.get().getExpiryDate().isBefore(LocalDateTime.now())) {
+            return "Invalid or expired token";
+        }
+
+        Optional<Users> user = userRepository.findByEmail(resetToken.get().getEmail());
+        if (user.isPresent()) {
+            user.get().setPassword(newPassword);
+            userRepository.save(user.get());
+            resetTokenRepository.delete(resetToken.get());
+            return "Password updated successfully";
+        }
+        return "User not found";
+    }
+
+    public Optional<Users> getUsername(String username){
+        return userRepository.findByUsername(username);
     }
 }

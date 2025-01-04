@@ -4,7 +4,7 @@ import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
 
-import java.util.List;
+// import java.util.List;
 
 @Entity
 @Getter
@@ -25,17 +25,21 @@ public class Users {
     @Column(nullable = false)
     private String role = "USER";
 
+    private String name;
+
+    @Column(nullable = false)
     private String email;
 
-    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<Crops> crops;
+    // @OneToMany(mappedBy = "users", cascade = CascadeType.ALL, orphanRemoval = true)
+    // private List<Crops> crops;
 
     public Users() {}
 
-    public Users(String username, String password, String role, String email) {
+    public Users(String username, String password, String role, String name,String email) {
         this.username = username;
         this.password = password;
         this.role = role;
+        this.name = name;
         this.email = email;
     }
 
@@ -80,11 +84,11 @@ public class Users {
         this.email = email;
     }
 
-    public List<Crops> getCrops() {
-        return crops;
-    }
+    // public List<Crops> getCrops() {
+    //     return crops;
+    // }
 
-    public void setCrops(List<Crops> crops) {
-        this.crops = crops;
-    }
+    // public void setCrops(List<Crops> crops) {
+    //     this.crops = crops;
+    // }
 }

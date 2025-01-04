@@ -30,12 +30,19 @@ public class JwtUtils {
     }
 
     public String extractUsername(String token) {
-        return Jwts.parserBuilder()
-            .setSigningKey(jwtSecretKey) // New API: Use parserBuilder() instead of parser()
-            .build()
-            .parseClaimsJws(token)
-            .getBody()
-            .getSubject();
+        try {
+            String username = Jwts.parserBuilder()
+                .setSigningKey(jwtSecretKey)
+                .build()
+                .parseClaimsJws(token)
+                .getBody()
+                .getSubject();
+            System.out.println("Extracted username: " + username);
+            return username;
+        } catch (Exception e) {
+            System.err.println("Token parsing error: " + e.getMessage());
+            throw new RuntimeException("Invalid JWT token");
+        }
     }
 
     public boolean validateToken(String token,String username) {
