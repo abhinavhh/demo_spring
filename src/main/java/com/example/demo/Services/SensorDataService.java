@@ -10,7 +10,10 @@ import org.springframework.stereotype.Service;
 
 import java.time.Duration;
 import java.time.LocalDateTime;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 @Service
 public class SensorDataService {
@@ -34,8 +37,24 @@ public class SensorDataService {
         return sensorDataRepository.findAll();
     }
 
-    public List<SensorData> getSensorDataByType(String sensorType) {
+    public List<SensorData> getSensorDataByType(String sensorType){
         return sensorDataRepository.findBySensorType(sensorType);
+    }
+
+    public List<SensorData> getFilteredSensorData(String sensorType, String filter) {
+        LocalDateTime startTime;
+        switch(filter.toLowerCase()){
+            case "week":
+                startTime = LocalDateTime.now().minusWeeks(1);
+                break;
+            case "month":
+                startTime = LocalDateTime.now().minusWeeks(1);
+                break;
+            case "day":
+                default:
+                    startTime = LocalDateTime.now().minusDays(1);
+        }
+        return sensorDataRepository.findBySensorTypeAndTimestampAfter(sensorType, startTime);
     }
 
     public Flux<SensorData> getAllSensorDataStream() {
@@ -43,6 +62,17 @@ public class SensorDataService {
                    .repeat()
                    .delayElements(Duration.ofSeconds(2));
     }
+
+    public List<Map<String, Object>> getMultiSensorData() {
+        List<SensorData> allData = sensorDataRepository.findAll();
+        return allData.stream().map(data -> {
+            Map<String, Object> dataPoint = new HashMap<>();
+            dataPoint.put("timestamp", data.getTimestamp());
+            dataPoint.put(data.getSensorType(), data.getValue());
+            return dataPoint;
+        }).collect(Collectors.toList());
+    }
+
 
     
 }
