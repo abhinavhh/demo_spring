@@ -39,7 +39,9 @@ public class SensorDataService {
     }
 
     public Flux<SensorData> getAllSensorDataStream() {
-        return Flux.fromIterable(sensorDataRepository.findAll()).delayElements(Duration.ofSeconds(2));
+        return Flux.fromIterable(sensorDataRepository.findAll())
+                   .repeat()
+                   .delayElements(Duration.ofSeconds(2));
     }
 
     

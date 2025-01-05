@@ -25,8 +25,6 @@ public class Users {
     @Column(nullable = false)
     private String role = "USER";
 
-    private String name;
-
     @Column(nullable = false)
     private String email;
 
@@ -35,11 +33,10 @@ public class Users {
 
     public Users() {}
 
-    public Users(String username, String password, String role, String name,String email) {
+    public Users(String username, String password, String role,String email) {
         this.username = username;
         this.password = password;
         this.role = role;
-        this.name = name;
         this.email = email;
     }
 

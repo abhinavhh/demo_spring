@@ -19,7 +19,7 @@ import com.example.demo.Repositories.UserRepository;
 import com.example.demo.Services.UserService;
 
 
-
+@CrossOrigin(origins = "http://localhost:5173")
 @RestController
 @RequestMapping("/api/auth")
 public class AuthController {
