@@ -22,7 +22,7 @@ public class SensorDataWebSocketHandler implements WebSocketHandler {
 
     private Flux<String> createSensorStream(String sensorType, int minValue, int maxValue) {
         return Flux.interval(Duration.ofSeconds(1))
-            .map(tick -> String.format(
+            .map(_ -> String.format(
                 "{\"timestamp\":\"%s\",\"sensorType\":\"%s\",\"value\":%d}",
                 LocalDateTime.now(),
                 sensorType,
@@ -30,6 +30,7 @@ public class SensorDataWebSocketHandler implements WebSocketHandler {
             ));
     }
 
+    @SuppressWarnings("null")
     @Override
     public Mono<Void> handle(WebSocketSession session) {
         // Create streams for each sensor type with appropriate ranges
