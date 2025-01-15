@@ -3,22 +3,20 @@ package com.example.demo.Services;
 import com.example.demo.Entities.SensorData;
 import com.example.demo.Repositories.SensorDataRepository;
 
-
 import reactor.core.publisher.Flux;
-
 import org.springframework.stereotype.Service;
-
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Random;  // Added this import
 import java.util.stream.Collectors;
 
 @Service
 public class SensorDataService {
-
     private final SensorDataRepository sensorDataRepository;
+    private final Random random = new Random();  // Added this field
 
     public SensorDataService(SensorDataRepository sensorDataRepository, UserService userService) {
         this.sensorDataRepository = sensorDataRepository;
@@ -30,9 +28,9 @@ public class SensorDataService {
     }
 
     public List<SensorData> getSensorData(String sensorType) {
-        
         return sensorDataRepository.findAll();
     }
+
     public List<SensorData> getAllSensorData() {
         return sensorDataRepository.findAll();
     }
@@ -51,8 +49,8 @@ public class SensorDataService {
                 startTime = LocalDateTime.now().minusWeeks(1);
                 break;
             case "day":
-                default:
-                    startTime = LocalDateTime.now().minusDays(1);
+            default:
+                startTime = LocalDateTime.now().minusDays(1);
         }
         return sensorDataRepository.findBySensorTypeAndTimestampAfter(sensorType, startTime);
     }
@@ -73,6 +71,14 @@ public class SensorDataService {
         }).collect(Collectors.toList());
     }
 
-
-    
+    public void generateRandomSensorData() {
+        String[] sensorTypes = {"Temperature", "Humidity", "Soil Moisture"};
+        for (String sensorType : sensorTypes) {
+            SensorData data = new SensorData();
+            data.setSensorType(sensorType);
+            data.setValue(random.nextDouble() * 100);  // Now using the random field
+            data.setTimestamp(LocalDateTime.now());
+            sensorDataRepository.save(data);
+        }
+    }
 }

@@ -13,4 +13,5 @@ import java.util.List;
 public interface SensorDataRepository extends JpaRepository<SensorData, Long> {
     List<SensorData> findBySensorTypeAndTimestampAfter(String sensorType, LocalDateTime timestamp);
     List<SensorData> findBySensorType(String sensorType);
+    List<SensorData> findBySensorTypeOrderByTimestampDesc(String sensorType);
 }

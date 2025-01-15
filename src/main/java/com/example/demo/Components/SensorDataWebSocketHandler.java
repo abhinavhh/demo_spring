@@ -1,6 +1,9 @@
 package com.example.demo.Components;
 
 import com.example.demo.Services.SensorDataService;
+
+
+import org.springframework.context.annotation.Configuration;
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.socket.WebSocketHandler;
 import org.springframework.web.reactive.socket.WebSocketSession;
@@ -12,6 +15,7 @@ import java.time.LocalDateTime;
 import java.util.Random;
 
 @Component
+@Configuration
 public class SensorDataWebSocketHandler implements WebSocketHandler {
     private final SensorDataService sensorDataService;
     private final Random random = new Random();
@@ -21,7 +25,7 @@ public class SensorDataWebSocketHandler implements WebSocketHandler {
     }
 
     private Flux<String> createSensorStream(String sensorType, int minValue, int maxValue) {
-        return Flux.interval(Duration.ofSeconds(1))
+        return Flux.interval(Duration.ofSeconds(10))
             .map(tick -> String.format(
                 "{\"timestamp\":\"%s\",\"sensorType\":\"%s\",\"value\":%d}",
                 LocalDateTime.now(),
@@ -46,7 +50,7 @@ public class SensorDataWebSocketHandler implements WebSocketHandler {
                 data.getSensorType(),
                 data.getValue()
             ))
-            .delayElements(Duration.ofSeconds(1));
+            .delayElements(Duration.ofSeconds(10));
 
         // Merge all streams
         Flux<String> combinedStream = Flux.merge(
@@ -58,4 +62,5 @@ public class SensorDataWebSocketHandler implements WebSocketHandler {
 
         return session.send(combinedStream.map(session::textMessage));
     }
+
 }

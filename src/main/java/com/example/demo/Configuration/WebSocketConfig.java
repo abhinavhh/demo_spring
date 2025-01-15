@@ -7,6 +7,7 @@ import org.springframework.web.reactive.socket.server.support.WebSocketHandlerAd
 
 import com.example.demo.Components.SensorDataWebSocketHandler;
 
+
 import java.util.Map;
 
 @Configuration
