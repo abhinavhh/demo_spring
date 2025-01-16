@@ -30,6 +30,7 @@ public class SensorDataWebSocketHandler implements WebSocketHandler {
             ));
     }
 
+    @SuppressWarnings("null")
     @Override
     public Mono<Void> handle(WebSocketSession session) {
         // Create streams for each sensor type with appropriate ranges
