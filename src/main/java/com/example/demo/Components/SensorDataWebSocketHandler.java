@@ -1,3 +1,4 @@
+
 package com.example.demo.Components;
 
 import com.example.demo.Services.SensorDataService;
@@ -26,7 +27,7 @@ public class SensorDataWebSocketHandler implements WebSocketHandler {
 
     private Flux<String> createSensorStream(String sensorType, int minValue, int maxValue) {
         return Flux.interval(Duration.ofSeconds(10))
-            .map(tick -> String.format(
+            .map(_ -> String.format(
                 "{\"timestamp\":\"%s\",\"sensorType\":\"%s\",\"value\":%d}",
                 LocalDateTime.now(),
                 sensorType,
