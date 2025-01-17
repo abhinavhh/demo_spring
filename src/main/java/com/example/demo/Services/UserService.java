@@ -6,6 +6,7 @@ import java.util.Optional;
 import java.util.Random;
 import java.util.concurrent.ConcurrentHashMap;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.stereotype.Service;
@@ -24,6 +25,7 @@ public class UserService {
     private static class OTPData {
         private final String otp;
         private final LocalDateTime expiryTime;
+        
 
         public OTPData(String otp, LocalDateTime expiryTime) {
             this.otp = otp;
@@ -83,7 +85,9 @@ public class UserService {
         userRepository.save(user);
         return "Profile updated successfully";
     }
-
+    @Autowired
+    private EmailService emailService;
+    
     public String generateOTP(String email) {
         Optional<Users> user = userRepository.findByEmail(email);
         if (user.isEmpty()) {
@@ -93,10 +97,12 @@ public class UserService {
         String otp = String.format("%06d", new Random().nextInt(999999));
         LocalDateTime expiryTime = LocalDateTime.now().plusMinutes(OTP_EXPIRY_MINUTES);
         otpStorage.put(email, new OTPData(otp, expiryTime));
-
+        
         // Here you would typically send the OTP via email
-        // For now, we'll just return it
-        return "OTP generated: " + otp;
+        String subject = "Your OTP for Password Reset";
+        emailService.sendOTP(email, otp, subject);
+        return "OTP send to your email successfully";
+        
     }
 
     public boolean verifyOTP(String email, String otp) {

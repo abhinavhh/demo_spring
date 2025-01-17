@@ -1,5 +1,7 @@
 package com.example.demo.Controllers;
 
+import java.util.Map;
+
 // UserController.java
 
 import java.util.Optional;
@@ -43,12 +45,12 @@ public class UserController {
     }
 
     @PutMapping("/update")
-    public ResponseEntity<?> updateUserProfile(@RequestBody Users updatedUser) {
-        Optional<Users> existingUser = userRepository.findByUsername(updatedUser.getUsername());
+    public ResponseEntity<?> updateUserProfile(@RequestBody Map<String, String> userDetails, @RequestParam("currentUsername") String currentUsername) {
+        Optional<Users> existingUser = userRepository.findByUsername(currentUsername);
         if (existingUser.isPresent()) {
             Users user = existingUser.get();
-            user.setUsername(updatedUser.getUsername());
-            user.setEmail(updatedUser.getEmail());
+            user.setUsername(userDetails.get("username"));
+            user.setEmail(userDetails.get("email"));
             Users savedUser = userRepository.save(user);
             return ResponseEntity.ok(savedUser);  // Return the updated user object
         }
