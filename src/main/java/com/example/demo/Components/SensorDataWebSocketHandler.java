@@ -1,68 +1,63 @@
-
 package com.example.demo.Components;
 
-import com.example.demo.Services.SensorDataService;
-
-
-import org.springframework.context.annotation.Configuration;
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.socket.WebSocketHandler;
 import org.springframework.web.reactive.socket.WebSocketSession;
-import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
+import reactor.core.publisher.Flux;
 
-import java.time.Duration;
-import java.time.LocalDateTime;
-import java.util.Random;
+import java.util.concurrent.CopyOnWriteArraySet;
 
 @Component
-@Configuration
 public class SensorDataWebSocketHandler implements WebSocketHandler {
-    private final SensorDataService sensorDataService;
-    private final Random random = new Random();
 
-    public SensorDataWebSocketHandler(SensorDataService sensorDataService) {
-        this.sensorDataService = sensorDataService;
-    }
+    // Store connected WebSocket sessions
+    private final CopyOnWriteArraySet<WebSocketSession> sessions = new CopyOnWriteArraySet<>();
 
-    private Flux<String> createSensorStream(String sensorType, int minValue, int maxValue) {
-        return Flux.interval(Duration.ofSeconds(10))
-            .map(_ -> String.format(
-                "{\"timestamp\":\"%s\",\"sensorType\":\"%s\",\"value\":%d}",
-                LocalDateTime.now(),
-                sensorType,
-                minValue + random.nextInt(maxValue - minValue + 1)
-            ));
-    }
-
+    // private String latestSensorData = "{}"; // Store the latest sensor data
 
     @Override
     public Mono<Void> handle(WebSocketSession session) {
-        // Create streams for each sensor type with appropriate ranges
-        Flux<String> temperatureStream = createSensorStream("Temperature", 20, 40);  // 20-40°C
-        Flux<String> humidityStream = createSensorStream("Humidity", 30, 90);       // 30-90%
-        Flux<String> soilMoistureStream = createSensorStream("SoilMoisture", 0, 100); // 0-100%
+        // Add the session to the set of active sessions
+        sessions.add(session);
+        
+        // Handle incoming messages from the client
+        Mono<Void> receive = session.receive()
+            .map(message -> message.getPayloadAsText()) // Convert to text
+            .doOnNext(this::handleIncomingData) // Process incoming data
+            .then(); // Close when done
 
-        // Combine with your existing sensor data stream if needed
-        Flux<String> sensorDataStream = sensorDataService
-            .getAllSensorDataStream()
-            .map(data -> String.format(
-                "{\"timestamp\":\"%s\",\"sensorType\":\"%s\",\"value\":%s}",
-                LocalDateTime.now(),
-                data.getSensorType(),
-                data.getValue()
-            ))
-            .delayElements(Duration.ofSeconds(10));
+        // Monitor and remove session upon close
+        session.closeStatus()
+            .doOnTerminate(() -> {
+                sessions.remove(session);
+                System.out.println("Session closed and removed: " + session.getId());
+            })
+            .subscribe();
 
-        // Merge all streams
-        Flux<String> combinedStream = Flux.merge(
-            temperatureStream,
-            humidityStream,
-            soilMoistureStream,
-            sensorDataStream
-        ).repeat();
-
-        return session.send(combinedStream.map(session::textMessage));
+        return receive;
     }
 
+    // Process incoming sensor data
+    private void handleIncomingData(String data) {
+        System.out.println("sensor Dara : " + data); // Update the latest sensor data
+
+        // Broadcast the updated sensor data to all connected sessions
+        broadcastSensorData(data);
+    }
+
+    // Send the latest sensor data to all connected clients
+    private void broadcastSensorData(String data) {
+        Flux.fromIterable(sessions)
+            .filter(WebSocketSession::isOpen) // Ensure session is still open
+            .flatMap(session -> session.send(Mono.just(session.textMessage(data)))
+                .doOnError(e -> {
+                    // Log the error and remove the session if sending fails
+                    System.err.println("Error sending data to session: " + session.getId() + ", " + e.getMessage());
+                    sessions.remove(session);
+                }))
+            .subscribe(); // Ensure the broadcast completes
+    }
+    
+    
 }
