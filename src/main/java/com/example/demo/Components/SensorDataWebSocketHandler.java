@@ -26,8 +26,9 @@ public class SensorDataWebSocketHandler implements WebSocketHandler {
 
     // private String latestSensorData = "{}"; // Store the latest sensor data
     private final Map<String, Object> sensorData = new ConcurrentHashMap<>();
-    
-    public SensorDataWebSocketHandler(){
+    private final SensorDataRepository sensorDataRepository;
+    public SensorDataWebSocketHandler(SensorDataRepository sensorDataRepository){
+        this.sensorDataRepository = sensorDataRepository;
         new Timer(true).scheduleAtFixedRate(new TimerTask() {
             @Override
             public void run(){
@@ -67,10 +68,6 @@ public class SensorDataWebSocketHandler implements WebSocketHandler {
 
     // Process incoming sensor data
     private void handleIncomingData(String data) {
-        // System.out.println("sensor Data : " + data); // Update the latest sensor data
-
-        // // Broadcast the updated sensor data to all connected sessions
-        // broadcastSensorData(data);
         try {
             // Parse incoming sensor data and update the map
             Map<String, Object> incomingData = new ObjectMapper().readValue(data, Map.class);
@@ -82,15 +79,6 @@ public class SensorDataWebSocketHandler implements WebSocketHandler {
 
     // Send the latest sensor data to all connected clients
     private void broadcastSensorData() {
-        // Flux.fromIterable(sessions)
-        //     .filter(WebSocketSession::isOpen) // Ensure session is still open
-        //     .flatMap(session -> session.send(Mono.just(session.textMessage(data)))
-        //         .doOnError(e -> {
-        //             // Log the error and remove the session if sending fails
-        //             System.err.println("Error sending data to session: " + session.getId() + ", " + e.getMessage());
-        //             sessions.remove(session);
-        //         }))
-        //     .subscribe(); // Ensure the broadcast completes
         try {
             String combinedData = new ObjectMapper().writeValueAsString(sensorData);
             Flux.fromIterable(sessions)
@@ -102,7 +90,7 @@ public class SensorDataWebSocketHandler implements WebSocketHandler {
             System.err.println("Error broadcasting sensor data: " + e.getMessage());
         }
     }
-    private SensorDataRepository sensorDataRepository;
+
     private void saveSensorDataToDatabase() {
     try {
         sensorData.forEach((sensorType, value) -> {
