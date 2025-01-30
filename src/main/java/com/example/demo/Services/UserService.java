@@ -99,7 +99,7 @@ public class UserService {
         otpStorage.put(email, new OTPData(otp, expiryTime));
         
         // Here you would typically send the OTP via email
-        String subject = "Your OTP for Password Reset";
+        String subject = "Password Reset otp Mail";
         emailService.sendOTP(email, otp, subject);
         return "OTP send to your email successfully";
         

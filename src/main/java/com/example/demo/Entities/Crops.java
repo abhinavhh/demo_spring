@@ -4,7 +4,7 @@ import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
 
-
+import java.time.LocalTime;
 
 @Entity
 @Getter
@@ -15,9 +15,8 @@ public class Crops {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+
     @ManyToOne
-    // @JoinColumn(name = "user_id", nullable = false)
-    
     private Users user;
 
     private String name;
@@ -33,10 +32,17 @@ public class Crops {
     private Double minSoilMoisture;
     private Double maxSoilMoisture;
 
+    @Column(name = "irrigation_start_time")
+    private LocalTime irrigationStartTime;
+
+    @Column(name = "irrigation_end_time")
+    private LocalTime irrigationEndTime;
 
     public Crops() {}
 
-    public Crops(String name, Double minTemperature, Double maxTemperature, Double minHumidity, Double maxHumidity, Double minSoilMoisture, Double maxSoilMoisture, Users user) {
+    public Crops(String name, Double minTemperature, Double maxTemperature, Double minHumidity, 
+                 Double maxHumidity, Double minSoilMoisture, Double maxSoilMoisture, 
+                 Users user, LocalTime irrigationStartTime, LocalTime irrigationEndTime) {
         this.name = name;
         this.minTemperature = minTemperature;
         this.maxTemperature = maxTemperature;
@@ -45,6 +51,8 @@ public class Crops {
         this.minSoilMoisture = minSoilMoisture;
         this.maxSoilMoisture = maxSoilMoisture;
         this.user = user;
+        this.irrigationStartTime = irrigationStartTime;
+        this.irrigationEndTime = irrigationEndTime;
     }
 
     // Getters and Setters
@@ -118,5 +126,21 @@ public class Crops {
 
     public void setUser(Users user) {
         this.user = user;
+    }
+
+    public LocalTime getIrrigationStartTime() {
+        return irrigationStartTime;
+    }
+
+    public void setIrrigationStartTime(LocalTime irrigationStartTime) {
+        this.irrigationStartTime = irrigationStartTime;
+    }
+
+    public LocalTime getIrrigationEndTime() {
+        return irrigationEndTime;
+    }
+
+    public void setIrrigationEndTime(LocalTime irrigationEndTime) {
+        this.irrigationEndTime = irrigationEndTime;
     }
 }

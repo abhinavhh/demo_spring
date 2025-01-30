@@ -41,7 +41,11 @@ public class SensorDataController {
         List<SensorData> data = sensorDataService.getAllSensorData();
         return ResponseEntity.ok(data);
     }
-
+    @GetMapping("/sensor/latest")
+    public ResponseEntity<SensorData> getLatestSensorData() {
+        SensorData latestData = sensorDataService.getLatestData(); // Fetch the latest data from your DB
+        return ResponseEntity.ok(latestData);
+    }
     @GetMapping("/type/{type}")
     public ResponseEntity<List<SensorData>> getSensorDataByType(@PathVariable String type) {
         List<SensorData> data = sensorDataService.getSensorDataByType(type);

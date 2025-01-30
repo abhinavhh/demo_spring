@@ -19,19 +19,21 @@ public class IrrigationController {
     /**
      * ✅ Set Irrigation Timing for a Crop
      */
-    @PostMapping("/set-timing")
-    public ResponseEntity<String> setIrrigationTiming(@RequestBody Long cropId) {
-        irrigationService.setIrrigationTiming(cropId);
+    @PostMapping("/set-timing/{cropId}")
+    public ResponseEntity<String> setIrrigationTiming(@PathVariable Long cropId, @RequestParam String startTime, @RequestParam String endTime) {
+        irrigationService.setIrrigationTiming(cropId, startTime, endTime);
         return ResponseEntity.ok("Irrigation timing set successfully for crop: " + cropId);
     }
+    @GetMapping("/get-timing/{cropId}")
+    public ResponseEntity<String> getIrrigationTiming(@PathVariable Long cropId) {
+        String timingInfo = irrigationService.getIrrigationTiming(cropId);
+        return ResponseEntity.ok(timingInfo);
+    }
 
-    /**
-     * ✅ Automatic Irrigation Based on Real-Time Data
-     */
     @PostMapping("/analyze/{cropId}")
     public ResponseEntity<String> analyzeAndControlIrrigation(@PathVariable Long cropId) {
-        irrigationService.analyzeAndControlIrrigation(cropId);
-        return ResponseEntity.ok("Irrigation analysis completed for crop ID: " + cropId);
+        String result = irrigationService.analyzeAndControlIrrigation(cropId);
+        return ResponseEntity.ok(result);
     }
 
     /**

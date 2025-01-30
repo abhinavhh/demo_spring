@@ -10,6 +10,7 @@ import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Random;  // Added this import
 import java.util.stream.Collectors;
 
@@ -29,6 +30,12 @@ public class SensorDataService {
 
     public List<SensorData> getSensorData(String sensorType) {
         return sensorDataRepository.findAll();
+    }
+
+    // Method to fetch the latest sensor data
+    public SensorData getLatestData() {
+        Optional<SensorData> latestData = sensorDataRepository.findTopByOrderByIdDesc();
+        return latestData.orElseThrow(() -> new RuntimeException("No sensor data found"));
     }
 
     public List<SensorData> getAllSensorData() {
