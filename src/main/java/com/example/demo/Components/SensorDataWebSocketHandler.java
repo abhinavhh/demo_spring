@@ -84,7 +84,7 @@ public class SensorDataWebSocketHandler implements WebSocketHandler {
             Flux.fromIterable(sessions)
                 .filter(WebSocketSession::isOpen)
                 .flatMap(session -> session.send(Mono.just(session.textMessage(combinedData)))
-                    .doOnError(_ -> sessions.remove(session)))
+                    .doOnError(tick -> sessions.remove(session)))
                 .subscribe();
         } catch (Exception e) {
             System.err.println("Error broadcasting sensor data: " + e.getMessage());
