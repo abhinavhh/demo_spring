@@ -25,7 +25,7 @@ import java.util.Collections;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 
-@CrossOrigin(origins = "http://localhost:5173")
+@CrossOrigin(origins = "https://smartfarmingirrgtn.netlify.app")
 @RestController
 @RequestMapping("/api/sensor")
 public class SensorDataController {

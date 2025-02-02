@@ -13,7 +13,7 @@ public class CorsConfig {
     public CorsFilter corsFilter() {
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         CorsConfiguration config = new CorsConfiguration();
-        config.addAllowedOrigin("http://localhost:5173"); // Allow frontend origin
+        config.addAllowedOrigin("https://smartfarmingirrgtn.netlify.app"); // Allow frontend origin
         config.addAllowedMethod("*");                     // Allow all HTTP methods
         config.addAllowedHeader("*");                     // Allow all headers
         config.setAllowCredentials(true);                 // Allow cookies and credentials
