@@ -131,7 +131,7 @@ public class SensorDataController {
         
         rawData.forEach(sensorData -> {
             String period = getMonthPeriod(sensorData.getTimestamp());
-            groupedByPeriod.computeIfAbsent(period, tick -> new ArrayList<>()).add(sensorData);
+            groupedByPeriod.computeIfAbsent(period, _-> new ArrayList<>()).add(sensorData);
         });
     
         // Calculate the average for each period (e.g., 3-day range)
