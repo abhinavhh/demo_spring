@@ -6,6 +6,8 @@ import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 import org.springframework.web.filter.CorsFilter;
 
+import java.util.List;
+
 @Configuration
 public class CorsConfig {
 
@@ -13,11 +15,11 @@ public class CorsConfig {
     public CorsFilter corsFilter() {
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         CorsConfiguration config = new CorsConfiguration();
-        config.addAllowedOrigin("https://smartfarmingirrgtn.netlify.app"); // Allow frontend origin
-        config.addAllowedMethod("*");                     // Allow all HTTP methods
-        config.addAllowedHeader("*");                     // Allow all headers
-        config.setAllowCredentials(true);                 // Allow cookies and credentials
-        source.registerCorsConfiguration("/**", config);  // Apply to all endpoints
+        config.setAllowedOriginPatterns(List.of("https://smartfarmingirrgtn.netlify.app")); // For Netlify
+        config.addAllowedMethod("*");
+        config.addAllowedHeader("*");
+        config.setAllowCredentials(true); // Enable cookies and credentials
+        source.registerCorsConfiguration("/**", config);
         return new CorsFilter(source);
     }
 }
