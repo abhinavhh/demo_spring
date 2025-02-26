@@ -21,11 +21,12 @@ import com.example.demo.Services.SensorDataService;
 
 import java.util.Collections;
 
-
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.temporal.WeekFields;
+import java.util.Locale;
 
-@CrossOrigin(origins = "https://smartfarmingirrgtn.netlify.app")
+@CrossOrigin(origins = "http://localhost:5173")
 @RestController
 @RequestMapping("/api/sensor")
 public class SensorDataController {
@@ -41,11 +42,13 @@ public class SensorDataController {
         List<SensorData> data = sensorDataService.getAllSensorData();
         return ResponseEntity.ok(data);
     }
-    @GetMapping("/sensor/latest")
+    
+    @GetMapping("/latest")
     public ResponseEntity<SensorData> getLatestSensorData() {
-        SensorData latestData = sensorDataService.getLatestData(); // Fetch the latest data from your DB
+        SensorData latestData = sensorDataService.getLatestData(); 
         return ResponseEntity.ok(latestData);
     }
+    
     @GetMapping("/type/{type}")
     public ResponseEntity<List<SensorData>> getSensorDataByType(@PathVariable String type) {
         List<SensorData> data = sensorDataService.getSensorDataByType(type);
@@ -57,22 +60,27 @@ public class SensorDataController {
         @PathVariable String type, @RequestParam(defaultValue = "day") String filter) {
 
         List<SensorData> rawData = sensorDataService.getSensorDataByType(type);
+        
+        // Return empty list if no data is found
+        if (rawData == null || rawData.isEmpty()) {
+            return ResponseEntity.ok(Collections.emptyList());
+        }
 
-        List<Map<String, Object>> aggregatedData = new ArrayList<>();
+        List<Map<String, Object>> aggregatedData;
 
         switch (filter.toLowerCase()) {
             case "day":
-                // Get real-time data for the last 24 hours
-                aggregatedData = aggregateDataFor24Hours(rawData);
+                // Get all data points for the current day with timestamps
+                aggregatedData = aggregateDataForDay(rawData);
                 break;
 
             case "week":
-                // Get the average data for the last 7 days
+                // Get the average data for each day of the last 7 days
                 aggregatedData = aggregateDataForWeek(rawData);
                 break;
 
             case "month":
-                // Get the average data for every 3 days over the last 30 days
+                // Get the average data for each week of the last 4 weeks
                 aggregatedData = aggregateDataForMonth(rawData);
                 break;
 
@@ -83,21 +91,24 @@ public class SensorDataController {
         return ResponseEntity.ok(aggregatedData);
     }
 
-    private List<Map<String, Object>> aggregateDataFor24Hours(List<SensorData> rawData) {
+    private List<Map<String, Object>> aggregateDataForDay(List<SensorData> rawData) {
         LocalDateTime now = LocalDateTime.now();
         LocalDateTime twentyFourHoursAgo = now.minusHours(24);
 
-        // Filter data for the last 24 hours
+        // Filter data for the last 24 hours and sort by timestamp
         return rawData.stream()
                 .filter(data -> data.getTimestamp().isAfter(twentyFourHoursAgo))
+                .sorted((a, b) -> a.getTimestamp().compareTo(b.getTimestamp()))
                 .map(data -> {
                     Map<String, Object> result = new HashMap<>();
                     result.put("timestamp", data.getTimestamp());
                     result.put("value", data.getValue());
+                    result.put("date", data.getTimestamp().toLocalDate().toString()); // Add date string for display
                     return result;
                 })
                 .collect(Collectors.toList());
     }
+    
     private List<Map<String, Object>> aggregateDataForWeek(List<SensorData> rawData) {
         LocalDateTime now = LocalDateTime.now();
         LocalDateTime sevenDaysAgo = now.minusDays(7);
@@ -116,48 +127,68 @@ public class SensorDataController {
                     .orElse(0.0);
     
             Map<String, Object> dailyData = new HashMap<>();
-            dailyData.put("date", entry.getKey());
-            dailyData.put("averageValue", avgValue);
+            LocalDate date = entry.getKey();
+            dailyData.put("date", date.toString());
+            dailyData.put("value", avgValue); // Consistent key name
+            dailyData.put("timestamp", date.atStartOfDay()); // Use start of day for timestamp
             result.add(dailyData);
         }
+        
+        // Sort by date
+        result.sort((a, b) -> ((String)a.get("date")).compareTo((String)b.get("date")));
         return result;
     }
     
     private List<Map<String, Object>> aggregateDataForMonth(List<SensorData> rawData) {
-        List<Map<String, Object>> monthlyData = new ArrayList<>();
+        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime fourWeeksAgo = now.minusWeeks(4);
         
-        // Group data by 3-day periods
-        Map<String, List<SensorData>> groupedByPeriod = new HashMap<>();
+        // Filter data for the last 4 weeks
+        List<SensorData> filteredData = rawData.stream()
+                .filter(data -> data.getTimestamp().isAfter(fourWeeksAgo))
+                .collect(Collectors.toList());
         
-        rawData.forEach(sensorData -> {
-            String period = getMonthPeriod(sensorData.getTimestamp());
-            groupedByPeriod.computeIfAbsent(period, _-> new ArrayList<>()).add(sensorData);
+        // Group data by week
+        Map<Integer, List<SensorData>> groupedByWeek = new HashMap<>();
+        
+        // Using WeekFields to get week of year
+        WeekFields weekFields = WeekFields.of(Locale.getDefault());
+        
+        filteredData.forEach(sensorData -> {
+            LocalDate date = sensorData.getTimestamp().toLocalDate();
+            int weekOfYear = date.get(weekFields.weekOfWeekBasedYear());
+            int year = date.get(weekFields.weekBasedYear());
+            // Unique key for week: year * 100 + weekOfYear
+            int weekKey = year * 100 + weekOfYear;
+            
+            groupedByWeek.computeIfAbsent(weekKey, _-> new ArrayList<>()).add(sensorData);
         });
     
-        // Calculate the average for each period (e.g., 3-day range)
-        for (Map.Entry<String, List<SensorData>> entry : groupedByPeriod.entrySet()) {
-            List<SensorData> periodData = entry.getValue();
-            double avg = periodData.stream().mapToDouble(SensorData::getValue).average().orElse(0.0);
+        // Calculate the average for each week
+        List<Map<String, Object>> monthlyData = new ArrayList<>();
+        for (Map.Entry<Integer, List<SensorData>> entry : groupedByWeek.entrySet()) {
+            List<SensorData> weekData = entry.getValue();
+            double avg = weekData.stream().mapToDouble(SensorData::getValue).average().orElse(0.0);
+            
+            // Find the first day of this week for date representation
+            LocalDate weekStartDate = weekData.stream()
+                .map(data -> data.getTimestamp().toLocalDate())
+                .min(LocalDate::compareTo)
+                .orElse(LocalDate.now());
             
             Map<String, Object> aggregated = new HashMap<>();
-            aggregated.put("averageValue", avg);
-            aggregated.put("startPeriod", periodData.get(0).getTimestamp());
-            aggregated.put("endPeriod", periodData.get(periodData.size() - 1).getTimestamp());
+            aggregated.put("value", avg); // Consistent key name
+            aggregated.put("date", "Week of " + weekStartDate.toString());
+            aggregated.put("timestamp", weekStartDate.atStartOfDay()); // Use start of week for timestamp
+            aggregated.put("weekNumber", entry.getKey() % 100); // Extract week number for display
             
             monthlyData.add(aggregated);
         }
         
+        // Sort by week start date
+        monthlyData.sort((a, b) -> ((LocalDateTime)a.get("timestamp")).compareTo((LocalDateTime)b.get("timestamp")));
         return monthlyData;
     }
-
-    // Helper method to extract a 3-day period based on the timestamp
-    private String getMonthPeriod(LocalDateTime timestamp) {
-    // Group by 3-day intervals
-        int dayOfMonth = timestamp.getDayOfMonth();
-        int startPeriod = (dayOfMonth / 3) * 3 + 1; // Ensure starting from 1st day of the month in 3-day chunks
-        return String.format("%04d-%02d-%02d", timestamp.getYear(), timestamp.getMonthValue(), startPeriod);
-    }
-    
 
     @PostMapping("/add")
     public ResponseEntity<String> addSensorData(@RequestBody SensorData sensorData) {
