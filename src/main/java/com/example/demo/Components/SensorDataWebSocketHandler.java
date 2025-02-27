@@ -72,6 +72,7 @@ public class SensorDataWebSocketHandler implements WebSocketHandler {
             // Parse incoming sensor data and update the map
             Map<String, Object> incomingData = new ObjectMapper().readValue(data, Map.class);
             sensorData.put((String) incomingData.get("sensorType"), incomingData.get("value"));
+            System.out.println(sensorData);
         } catch (Exception e) {
             System.err.println("Error processing incoming data: " + e.getMessage());
         }
