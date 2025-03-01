@@ -9,8 +9,6 @@ import com.example.demo.Repositories.SensorDataRepository;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import reactor.core.publisher.Mono;
-import reactor.core.publisher.Flux;
-
 import java.time.LocalDateTime;
 import java.util.Map;
 import java.util.Timer;
@@ -70,6 +68,7 @@ public class SensorDataWebSocketHandler implements WebSocketHandler {
     private void handleIncomingData(String data) {
         try {
             // Parse incoming sensor data and update the map
+            @SuppressWarnings("unchecked")
             Map<String, Object> incomingData = new ObjectMapper().readValue(data, Map.class);
             sensorData.put((String) incomingData.get("sensorType"), incomingData.get("value"));
             System.out.println(sensorData);
@@ -82,11 +81,18 @@ public class SensorDataWebSocketHandler implements WebSocketHandler {
     private void broadcastSensorData() {
         try {
             String combinedData = new ObjectMapper().writeValueAsString(sensorData);
-            Flux.fromIterable(sessions)
-                .filter(WebSocketSession::isOpen)
-                .flatMap(session -> session.send(Mono.just(session.textMessage(combinedData)))
-                    .doOnError(_ -> sessions.remove(session)))
-                .subscribe();
+            
+            // Create a separate Flux operation for each session
+            for (WebSocketSession session : sessions) {
+                if (session.isOpen()) {
+                    session.send(Mono.just(session.textMessage(combinedData)))
+                        .doOnError(e -> {
+                            System.err.println("Error sending to session " + session.getId() + ": " + e.getMessage());
+                            sessions.remove(session);
+                        })
+                        .subscribe();
+                }
+            }
         } catch (Exception e) {
             System.err.println("Error broadcasting sensor data: " + e.getMessage());
         }
@@ -117,7 +123,4 @@ public class SensorDataWebSocketHandler implements WebSocketHandler {
         System.err.println("Error saving sensor data to the database: " + e.getMessage());
     }
     }
-
-    
-    
 }
