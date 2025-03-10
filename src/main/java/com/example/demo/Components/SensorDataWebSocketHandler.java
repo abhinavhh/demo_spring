@@ -14,113 +14,121 @@ import java.util.Map;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.CopyOnWriteArraySet;
 
 @Component
 public class SensorDataWebSocketHandler implements WebSocketHandler {
 
-    // Store connected WebSocket sessions
-    private final CopyOnWriteArraySet<WebSocketSession> sessions = new CopyOnWriteArraySet<>();
-
-    // private String latestSensorData = "{}"; // Store the latest sensor data
+    // ✅ Store sessions per Device ID
+    private final Map<String, WebSocketSession> deviceSessions = new ConcurrentHashMap<>();
     private final Map<String, Object> sensorData = new ConcurrentHashMap<>();
     private final SensorDataRepository sensorDataRepository;
-    public SensorDataWebSocketHandler(SensorDataRepository sensorDataRepository){
+
+    public SensorDataWebSocketHandler(SensorDataRepository sensorDataRepository) {
         this.sensorDataRepository = sensorDataRepository;
+
+        // Broadcast every 5 seconds
         new Timer(true).scheduleAtFixedRate(new TimerTask() {
             @Override
-            public void run(){
+            public void run() {
                 broadcastSensorData();
             }
         }, 0, 5000);
 
-        // Schedule database saving every 1 minute
+        // Save data every 1 minute
         new Timer(true).scheduleAtFixedRate(new TimerTask() {
             @Override
             public void run() {
                 saveSensorDataToDatabase();
             }
-        }, 0, 60000); // 60000ms = 1 minute
+        }, 0, 60000);
     }
+
     @Override
     public Mono<Void> handle(WebSocketSession session) {
-        // Add the session to the set of active sessions
-        sessions.add(session);
-        
-        // Handle incoming messages from the client
-        Mono<Void> receive = session.receive()
-            .map(message -> message.getPayloadAsText()) // Convert to text
-            .doOnNext(this::handleIncomingData) // Process incoming data
-            .then(); // Close when done
+        // ✅ Extract Device ID from WebSocket URL
+        String path = session.getHandshakeInfo().getUri().getPath();
+        String deviceId = path.substring(path.lastIndexOf('/') + 1);
 
-        // Monitor and remove session upon close
+        System.out.println("New connection from Device ID: " + deviceId);
+
+        // ✅ Store session against Device ID
+        deviceSessions.put(deviceId, session);
+
+        // Handle incoming messages
+        Mono<Void> receive = session.receive()
+            .map(message -> message.getPayloadAsText())
+            .doOnNext(data -> handleIncomingData(deviceId, data))
+            .then();
+
+        // Handle session close
         session.closeStatus()
             .doOnTerminate(() -> {
-                sessions.remove(session);
-                System.out.println("Session closed and removed: " + session.getId());
+                deviceSessions.remove(deviceId);
+                System.out.println("Session closed for Device ID: " + deviceId);
             })
             .subscribe();
 
         return receive;
     }
 
-    // Process incoming sensor data
-    private void handleIncomingData(String data) {
+    // ✅ Handle incoming sensor data
+    private void handleIncomingData(String deviceId, String data) {
         try {
-            // Parse incoming sensor data and update the map
             @SuppressWarnings("unchecked")
             Map<String, Object> incomingData = new ObjectMapper().readValue(data, Map.class);
-            sensorData.put((String) incomingData.get("sensorType"), incomingData.get("value"));
-            System.out.println(sensorData);
+            sensorData.put(deviceId + ":" + incomingData.get("sensorType"), incomingData.get("value"));
+
+            System.out.println("Received from Device " + deviceId + ": " + sensorData);
         } catch (Exception e) {
-            System.err.println("Error processing incoming data: " + e.getMessage());
+            System.err.println("Error processing data: " + e.getMessage());
         }
     }
 
-    // Send the latest sensor data to all connected clients
+    // ✅ Broadcast sensor data to correct Device ID only
     private void broadcastSensorData() {
-        try {
-            String combinedData = new ObjectMapper().writeValueAsString(sensorData);
-            
-            // Create a separate Flux operation for each session
-            for (WebSocketSession session : sessions) {
+        for (Map.Entry<String, WebSocketSession> entry : deviceSessions.entrySet()) {
+            String deviceId = entry.getKey();
+            WebSocketSession session = entry.getValue();
+
+            try {
+                String data = new ObjectMapper().writeValueAsString(getDeviceData(deviceId));
+
                 if (session.isOpen()) {
-                    session.send(Mono.just(session.textMessage(combinedData)))
-                        .doOnError(e -> {
-                            System.err.println("Error sending to session " + session.getId() + ": " + e.getMessage());
-                            sessions.remove(session);
-                        })
+                    session.send(Mono.just(session.textMessage(data)))
+                        .doOnError(e -> deviceSessions.remove(deviceId))
                         .subscribe();
                 }
+            } catch (Exception e) {
+                System.err.println("Error broadcasting: " + e.getMessage());
             }
-        } catch (Exception e) {
-            System.err.println("Error broadcasting sensor data: " + e.getMessage());
         }
     }
 
+    // ✅ Get sensor data for a specific Device ID
+    private Map<String, Object> getDeviceData(String deviceId) {
+        Map<String, Object> deviceData = new ConcurrentHashMap<>();
+        sensorData.forEach((key, value) -> {
+            if (key.startsWith(deviceId)) {
+                deviceData.put(key.split(":")[1], value);
+            }
+        });
+        return deviceData;
+    }
+
+    // ✅ Save sensor data to database
     private void saveSensorDataToDatabase() {
-    try {
-        sensorData.forEach((sensorType, value) -> {
+        sensorData.forEach((key, value) -> {
+            String[] parts = key.split(":");
+            String deviceId = parts[0];
+            String sensorType = parts[1];
+
             SensorData entity = new SensorData();
             entity.setSensorType(sensorType);
-
-            // Convert value to double (ensure it's castable)
-            if (value instanceof Number) {
-                entity.setValue(((Number) value).doubleValue());
-            } else {
-                System.err.println("Invalid value type for sensor: " + sensorType);
-                return; // Skip saving this entry if value is not a valid number
-            }
-
-            // Set the timestamp to the current LocalDateTime
+            entity.setValue(Double.parseDouble(value.toString()));
             entity.setTimestamp(LocalDateTime.now());
-
-            // Save to the database
             sensorDataRepository.save(entity);
         });
-        System.out.println("Sensor data saved to the database.");
-    } catch (Exception e) {
-        System.err.println("Error saving sensor data to the database: " + e.getMessage());
-    }
+
+        System.out.println("Sensor data saved to DB.");
     }
 }
