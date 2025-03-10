@@ -5,7 +5,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 
-@CrossOrigin(origins = "https://smart-irrigation-rho.vercel.app")
+@CrossOrigin(origins = "https://smart-irrigation-9vzen97ha-abhinavhhs-projects.vercel.app")
 @RestController
 @RequestMapping("/api/irrigation")
 public class IrrigationController {
