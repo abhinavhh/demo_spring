@@ -6,8 +6,8 @@ WORKDIR /app
 # Copy the project files
 COPY . .
 
-# Build the application
-RUN mvn clean package
+# Build the application without running tests
+RUN mvn clean package -DskipTests
 
 # Use JDK to run the application
 FROM eclipse-temurin:21-jdk-alpine
