@@ -161,7 +161,7 @@ public class SensorDataController {
             // Unique key for week: year * 100 + weekOfYear
             int weekKey = year * 100 + weekOfYear;
             
-            groupedByWeek.computeIfAbsent(weekKey, _-> new ArrayList<>()).add(sensorData);
+            groupedByWeek.computeIfAbsent(weekKey, tick-> new ArrayList<>()).add(sensorData);
         });
     
         // Calculate the average for each week
