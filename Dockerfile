@@ -7,11 +7,11 @@ WORKDIR /app
 # Copy all project files
 COPY . .
 
-# Give permission to Maven Wrapper
-RUN chmod +x ./mvnw
+# Install Maven
+RUN apt-get update && apt-get install -y maven
 
-# Build the application
-RUN ./mvnw clean package
+# Build the application using Maven directly
+RUN mvn clean package
 
 # ===================
 # RUN PHASE (Second Stage)
