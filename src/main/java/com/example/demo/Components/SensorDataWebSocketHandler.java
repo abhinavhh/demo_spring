@@ -42,7 +42,6 @@ public class SensorDataWebSocketHandler implements WebSocketHandler {
             }
         }, 0, 60000); // 60000ms = 1 minute
     }
-    @SuppressWarnings("null")
     @Override
     public Mono<Void> handle(WebSocketSession session) {
         // Add the session to the set of active sessions
