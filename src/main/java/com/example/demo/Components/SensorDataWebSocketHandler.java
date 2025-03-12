@@ -55,11 +55,14 @@ public class SensorDataWebSocketHandler implements WebSocketHandler {
 
         // Monitor and remove session upon close
         session.closeStatus()
-            .doOnTerminate(() -> {
-                sessions.remove(session);
-                System.out.println("Session closed and removed: " + session.getId());
-            })
-            .subscribe();
+        .doOnNext(status -> { 
+            System.out.println("Session closed with status: " + status);
+            sessions.remove(session);
+            System.out.println("Session removed: " + session.getId());
+        })
+        .doOnError(error -> System.err.println("Error closing session: " + error.getMessage()))
+        .subscribe();
+
 
         return receive;
     }
@@ -81,6 +84,13 @@ public class SensorDataWebSocketHandler implements WebSocketHandler {
     private void broadcastSensorData() {
         try {
             String combinedData = new ObjectMapper().writeValueAsString(sensorData);
+
+            // Flux.fromIterable(sessions)
+            //     .filter(WebSocketSession::isOpen)
+            //     .flatMap(session -> session.send(Mono.just(session.textMessage(combinedData)))
+            //         .doOnError(tick -> sessions.remove(session)))
+            //     .subscribe();
+
             
             // Create a separate Flux operation for each session
             for (WebSocketSession session : sessions) {
@@ -93,6 +103,7 @@ public class SensorDataWebSocketHandler implements WebSocketHandler {
                         .subscribe();
                 }
             }
+
         } catch (Exception e) {
             System.err.println("Error broadcasting sensor data: " + e.getMessage());
         }
