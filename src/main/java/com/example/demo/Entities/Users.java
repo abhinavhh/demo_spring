@@ -9,7 +9,10 @@ import lombok.Setter;
 @Entity
 @Getter
 @Setter
-@Table(name = "users") // Renamed to avoid reserved keyword conflict
+@Table(name = "users", uniqueConstraints = {
+    @UniqueConstraint(columnNames = "email"),
+    @UniqueConstraint(columnNames = "username")
+}) // Renamed to avoid reserved keyword conflict
 public class Users {
 
     @Id
@@ -28,8 +31,6 @@ public class Users {
     @Column(nullable = false)
     private String email;
 
-    // @OneToMany(mappedBy = "users", cascade = CascadeType.ALL, orphanRemoval = true)
-    // private List<Crops> crops;
 
     public Users() {}
 
@@ -80,12 +81,4 @@ public class Users {
     public void setEmail(String email) {
         this.email = email;
     }
-
-    // public List<Crops> getCrops() {
-    //     return crops;
-    // }
-
-    // public void setCrops(List<Crops> crops) {
-    //     this.crops = crops;
-    // }
 }
