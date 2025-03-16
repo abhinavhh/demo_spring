@@ -26,7 +26,7 @@ import java.time.LocalDateTime;
 import java.time.temporal.WeekFields;
 import java.util.Locale;
 
-@CrossOrigin(origins = "https://smart-irrigation-rho.vercel.app")
+@CrossOrigin(origins = "http://localhost:5173")
 @RestController
 @RequestMapping("/api/sensor")
 public class SensorDataController {
