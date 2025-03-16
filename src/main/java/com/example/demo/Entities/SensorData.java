@@ -14,11 +14,12 @@ public class SensorData {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    // Each sensor reading is now associated with a user.
     @ManyToOne
     @JoinColumn(name = "user_id")
     private Users user;
 
-    private String sensorType; // e.g., "temperature", "humidity", "soilMoisture"
+    private String sensorType; // e.g., "Temperature", "Humidity", "Soil Moisture"
     private Double value;
 
     private LocalDateTime timestamp;
@@ -28,7 +29,6 @@ public class SensorData {
     public SensorData(String sensorType, Double value) {
         this.sensorType = sensorType;
         this.value = value;
-
     }
 
     // Getters and Setters

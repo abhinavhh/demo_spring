@@ -1,9 +1,9 @@
 package com.example.demo.Controllers;
 
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 
-// import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -20,28 +20,41 @@ public class AuthController {
     private final UserRepository userRepository;
     private final UserService userService;
 
-    // @Autowired
     public AuthController(UserRepository userRepository, UserService userService) {
         this.userRepository = userRepository;
         this.userService = userService;
     }
 
     @PostMapping("/register")
-    public ResponseEntity<String> register(@RequestBody Users user) {
+    public ResponseEntity<?> register(@RequestBody Users user) {
         String result = userService.registerUser(user);
-        return ResponseEntity.ok(result);
+        // Optionally, you can return the created user details (except password) if needed.
+        Map<String, Object> response = new HashMap<>();
+        response.put("message", result);
+        response.put("username", user.getUsername());
+        response.put("email", user.getEmail());
+        return ResponseEntity.ok(response);
     }
 
     @PostMapping("/login")
-    public ResponseEntity<String> login(@RequestBody Map<String, String> requestBody) {
+    public ResponseEntity<?> login(@RequestBody Map<String, String> requestBody) {
         String username = requestBody.get("username");
         String password = requestBody.get("password");
 
-        Optional<Users> user = Optional.ofNullable(userRepository.findByUsername(username)
-            .orElseThrow(() -> new RuntimeException("User not found")));
-
-        if (user.isPresent() && user.get().getPassword().equals(password)) {
-            return ResponseEntity.ok("Login successful");
+        Optional<Users> userOpt = userRepository.findByUsername(username);
+        if (userOpt.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("User not found");
+        }
+        
+        Users user = userOpt.get();
+        if (user.getPassword().equals(password)) {
+            // Build a response containing user details so that client can use userId for further requests.
+            Map<String, Object> response = new HashMap<>();
+            response.put("message", "Login successful");
+            response.put("userId", user.getId());
+            response.put("username", user.getUsername());
+            response.put("role", user.getRole());
+            return ResponseEntity.ok(response);
         } else {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid credentials");
         }

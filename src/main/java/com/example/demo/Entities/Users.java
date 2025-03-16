@@ -3,8 +3,9 @@ package com.example.demo.Entities;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
+import java.util.List;
 
-// import java.util.List;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 
 @Entity
 @Getter
@@ -28,19 +29,26 @@ public class Users {
     @Column(nullable = false)
     private String email;
 
-    // @OneToMany(mappedBy = "users", cascade = CascadeType.ALL, orphanRemoval = true)
-    // private List<Crops> crops;
+    // Relationship with user-specific crop selections
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonIgnore
+    private List<UserCrops> userCrops;
+
+    // Relationship with sensor data for this user
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonIgnore
+    private List<SensorData> sensorData;
 
     public Users() {}
 
-    public Users(String username, String password, String role,String email) {
+    public Users(String username, String password, String role, String email) {
         this.username = username;
         this.password = password;
         this.role = role;
         this.email = email;
     }
 
-    // Getters and Setters
+    // Getters and setters for id, username, password, role, email, userCrops, sensorData
     public Long getId() {
         return id;
     }
@@ -60,32 +68,40 @@ public class Users {
     public String getPassword() {
         return password;
     }
-
+ 
     public void setPassword(String password) {
         this.password = password;
     }
-
+ 
     public String getRole() {
         return role;
     }
-
+ 
     public void setRole(String role) {
         this.role = role;
     }
-
+ 
     public String getEmail() {
         return email;
     }
-
+ 
     public void setEmail(String email) {
         this.email = email;
     }
-
-    // public List<Crops> getCrops() {
-    //     return crops;
-    // }
-
-    // public void setCrops(List<Crops> crops) {
-    //     this.crops = crops;
-    // }
+ 
+    public List<UserCrops> getUserCrops() {
+        return userCrops;
+    }
+ 
+    public void setUserCrops(List<UserCrops> userCrops) {
+        this.userCrops = userCrops;
+    }
+ 
+    public List<SensorData> getSensorData() {
+        return sensorData;
+    }
+ 
+    public void setSensorData(List<SensorData> sensorData) {
+        this.sensorData = sensorData;
+    }
 }
