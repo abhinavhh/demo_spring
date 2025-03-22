@@ -27,4 +27,6 @@ public interface SensorDataRepository extends JpaRepository<SensorData, Long> {
 
     Optional<SensorData> findTopByUserIdOrderByIdDesc(Long userId);
 
+    Optional<SensorData> findTopByUserIdAndSensorTypeOrderByIdDesc(Long userId, String string);
+
 }

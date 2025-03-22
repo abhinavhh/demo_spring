@@ -1,6 +1,7 @@
 package com.example.demo.Services;
 
 import com.example.demo.Entities.Notification;
+import com.example.demo.Entities.Users;
 import com.example.demo.Repositories.NotificationRepository;
 import org.springframework.stereotype.Service;
 import java.util.List;
@@ -14,9 +15,9 @@ public class NotificationService {
         this.notificationRepository = notificationRepository;
     }
 
-    public Notification createNotification(String message) {
-        Notification notification = new Notification(message, null);
-        // Optionally, add additional logic (e.g., avoid duplicates)
+    // Updated to include the user
+    public Notification createNotification(String message, Users user) {
+        Notification notification = new Notification(message, user);
         return notificationRepository.save(notification);
     }
 

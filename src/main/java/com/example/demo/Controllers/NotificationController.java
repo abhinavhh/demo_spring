@@ -1,6 +1,8 @@
 package com.example.demo.Controllers;
 
 import com.example.demo.Entities.Notification;
+import com.example.demo.Entities.Users;
+import com.example.demo.Repositories.UserRepository;
 import com.example.demo.Services.NotificationService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -14,9 +16,11 @@ import java.util.Map;
 public class NotificationController {
 
     private final NotificationService notificationService;
+    private final UserRepository userRepository;
 
-    public NotificationController(NotificationService notificationService) {
+    public NotificationController(NotificationService notificationService, UserRepository userRepository) {
          this.notificationService = notificationService;
+         this.userRepository = userRepository;
     }
 
     @GetMapping
@@ -28,7 +32,14 @@ public class NotificationController {
     @PostMapping
     public ResponseEntity<Notification> createNotification(@RequestBody Map<String, String> payload) {
          String message = payload.get("message");
-         Notification notification = notificationService.createNotification(message);
+         String userIdStr = payload.get("userId");
+         if (userIdStr == null) {
+             return ResponseEntity.badRequest().build();
+         }
+         Long userId = Long.valueOf(userIdStr);
+         Users user = userRepository.findById(userId)
+             .orElseThrow(() -> new RuntimeException("User not found"));
+         Notification notification = notificationService.createNotification(message, user);
          return ResponseEntity.ok(notification);
     }
 }
