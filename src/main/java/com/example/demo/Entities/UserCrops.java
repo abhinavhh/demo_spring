@@ -1,14 +1,9 @@
 package com.example.demo.Entities;
 
 import jakarta.persistence.*;
-import lombok.Getter;
-import lombok.Setter;
-
 import java.time.LocalTime;
 
 @Entity
-@Getter
-@Setter
 @Table(name = "user_crops")
 public class UserCrops {
 
@@ -39,4 +34,106 @@ public class UserCrops {
 
     @Column(name = "irrigation_end_time")
     private LocalTime customIrrigationEndTime;
+
+    // Field to store manual control state
+    @Column(name = "manual_control_enabled")
+    private Boolean manualControlEnabled;
+
+    // Getters and Setters
+
+    public Long getId() {
+        return id;
+    }
+
+    public void setId(Long id) {
+        this.id = id;
+    }
+
+    public Users getUser() {
+        return user;
+    }
+
+    public void setUser(Users user) {
+        this.user = user;
+    }
+
+    public Crops getCrop() {
+        return crop;
+    }
+
+    public void setCrop(Crops crop) {
+        this.crop = crop;
+    }
+
+    public Double getCustomMinTemperature() {
+        return customMinTemperature;
+    }
+
+    public void setCustomMinTemperature(Double customMinTemperature) {
+        this.customMinTemperature = customMinTemperature;
+    }
+
+    public Double getCustomMaxTemperature() {
+        return customMaxTemperature;
+    }
+
+    public void setCustomMaxTemperature(Double customMaxTemperature) {
+        this.customMaxTemperature = customMaxTemperature;
+    }
+
+    public Double getCustomMinHumidity() {
+        return customMinHumidity;
+    }
+
+    public void setCustomMinHumidity(Double customMinHumidity) {
+        this.customMinHumidity = customMinHumidity;
+    }
+
+    public Double getCustomMaxHumidity() {
+        return customMaxHumidity;
+    }
+
+    public void setCustomMaxHumidity(Double customMaxHumidity) {
+        this.customMaxHumidity = customMaxHumidity;
+    }
+
+    public Double getCustomMinSoilMoisture() {
+        return customMinSoilMoisture;
+    }
+
+    public void setCustomMinSoilMoisture(Double customMinSoilMoisture) {
+        this.customMinSoilMoisture = customMinSoilMoisture;
+    }
+
+    public Double getCustomMaxSoilMoisture() {
+        return customMaxSoilMoisture;
+    }
+
+    public void setCustomMaxSoilMoisture(Double customMaxSoilMoisture) {
+        this.customMaxSoilMoisture = customMaxSoilMoisture;
+    }
+
+    public LocalTime getCustomIrrigationStartTime() {
+        return customIrrigationStartTime;
+    }
+
+    public void setCustomIrrigationStartTime(LocalTime customIrrigationStartTime) {
+        this.customIrrigationStartTime = customIrrigationStartTime;
+    }
+
+    public LocalTime getCustomIrrigationEndTime() {
+        return customIrrigationEndTime;
+    }
+
+    public void setCustomIrrigationEndTime(LocalTime customIrrigationEndTime) {
+        this.customIrrigationEndTime = customIrrigationEndTime;
+    }
+
+    public Boolean isManualControlEnabled() {
+        return manualControlEnabled;
+    }
+
+    public void setManualControlEnabled(Boolean manualControlEnabled) {
+        this.manualControlEnabled = manualControlEnabled;
+    }
 }

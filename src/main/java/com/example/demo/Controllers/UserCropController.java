@@ -8,6 +8,7 @@ import com.example.demo.Repositories.UserCropRepository;
 import com.example.demo.Repositories.UserRepository;
 import java.time.LocalTime;
 import java.time.format.DateTimeParseException;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -119,5 +120,38 @@ public class UserCropController {
         } else {
             return ResponseEntity.badRequest().body("Mapping not found.");
         }
+    }
+    
+    // New endpoint to fetch the user-set threshold values.
+    // Optionally accepts a cropId to specify which crop's thresholds to fetch.
+    @GetMapping("/thresholds")
+    public ResponseEntity<?> getUserThresholds(@RequestParam Long userId, @RequestParam(required = false) Long cropId) {
+        Optional<UserCrops> mappingOpt;
+        if (cropId != null) {
+            mappingOpt = userCropRepository.findByUserIdAndCropId(userId, cropId);
+        } else {
+            List<UserCrops> userCrops = userCropRepository.findByUserId(userId);
+            if (userCrops.isEmpty()) {
+                return ResponseEntity.badRequest().body("No crops selected for user.");
+            }
+            mappingOpt = Optional.of(userCrops.get(0));
+        }
+        
+        if (!mappingOpt.isPresent()) {
+            return ResponseEntity.badRequest().body("Mapping not found.");
+        }
+        
+        UserCrops userCrop = mappingOpt.get();
+        Map<String, Object> thresholds = new HashMap<>();
+        thresholds.put("customMinTemperature", userCrop.getCustomMinTemperature());
+        thresholds.put("customMaxTemperature", userCrop.getCustomMaxTemperature());
+        thresholds.put("customMinHumidity", userCrop.getCustomMinHumidity());
+        thresholds.put("customMaxHumidity", userCrop.getCustomMaxHumidity());
+        thresholds.put("customMinSoilMoisture", userCrop.getCustomMinSoilMoisture());
+        thresholds.put("customMaxSoilMoisture", userCrop.getCustomMaxSoilMoisture());
+        thresholds.put("customIrrigationStartTime", userCrop.getCustomIrrigationStartTime());
+        thresholds.put("customIrrigationEndTime", userCrop.getCustomIrrigationEndTime());
+        
+        return ResponseEntity.ok(thresholds);
     }
 }

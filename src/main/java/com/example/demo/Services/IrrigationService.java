@@ -2,10 +2,13 @@ package com.example.demo.Services;
 
 import com.example.demo.Entities.Crops;
 import com.example.demo.Entities.IrrigationSettings;
+import com.example.demo.Entities.UserCrops;
 import com.example.demo.Entities.Users;
 import com.example.demo.Repositories.CropRepository;
 import com.example.demo.Repositories.IrrigationSettingsRepository;
+import com.example.demo.Repositories.UserCropRepository;
 import com.example.demo.Repositories.UserRepository;
+import org.springframework.cglib.core.Local;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalTime;
@@ -17,13 +20,19 @@ public class IrrigationService {
     private final CropRepository cropRepository;
     private final IrrigationSettingsRepository irrigationSettingsRepository;
     private final UserRepository userRepository;
+    private final UserCropRepository userCropRepository;
+    private final MosfetControlService mosfetControlService;
 
     public IrrigationService(CropRepository cropRepository,
                              IrrigationSettingsRepository irrigationSettingsRepository,
-                             UserRepository userRepository) {
+                             UserRepository userRepository,
+                             UserCropRepository userCropRepository,
+                             MosfetControlService mosfetControlService) {
         this.cropRepository = cropRepository;
         this.irrigationSettingsRepository = irrigationSettingsRepository;
         this.userRepository = userRepository;
+        this.userCropRepository = userCropRepository;
+        this.mosfetControlService = mosfetControlService;
     }
 
     // Set irrigation timing for a crop for a specific user.
@@ -135,13 +144,22 @@ public class IrrigationService {
 
     // Allow manual control of the valve for a specific user and crop.
     public void manualValveControl(Long userId, Long cropId, boolean openValve) {
-        Optional<IrrigationSettings> optionalSettings = irrigationSettingsRepository.findByCropIdAndUserId(cropId, userId);
+        Optional<UserCrops> optionalSettings = userCropRepository.findByUserIdAndCropId(userId, cropId);
         if (optionalSettings.isEmpty()) {
-            throw new RuntimeException("Irrigation settings not found for this user and crop.");
+            throw new RuntimeException("crop settings not found for this user and crop.");
         }
-        IrrigationSettings settings = optionalSettings.get();
-        settings.setIsManualControlEnabled(openValve);
-        irrigationSettingsRepository.save(settings);
+        UserCrops userCrop = optionalSettings.get();
+        userCrop.setManualControlEnabled(openValve);
+        userCropRepository.save(userCrop);
+        if (openValve) {
+            String result = mosfetControlService.switchOnMosfet();
+            // Optionally log or process result
+            System.out.println("MOSFET switch on result: " + result);
+        } else {
+            String result = mosfetControlService.switchOffMosfet();
+            // Optionally log or process result
+            System.out.println("MOSFET switch off result: " + result);
+        }
     }
 
     // Retrieve the current valve status for a specific user and crop.
@@ -152,5 +170,27 @@ public class IrrigationService {
         }
         IrrigationSettings settings = optionalSettings.get();
         return settings.getIsManualControlEnabled() ? "Valve is OPEN" : "Valve is CLOSED";
+    }
+
+    // automatic valve open code
+    public String automaticValveControl(Long userId, Long cropId) {
+        Optional<UserCrops> autoSettings = userCropRepository.findByUserIdAndCropId(userId, cropId);
+        if (autoSettings.isPresent()) {
+            UserCrops userCrops = autoSettings.get();
+            LocalTime start = userCrops.getCustomIrrigationStartTime();
+            LocalTime end = userCrops.getCustomIrrigationEndTime();
+            LocalTime now = LocalTime.now();
+            if (start.equals(now) || start.isBefore(now)) {
+                String result = mosfetControlService.switchOnMosfet();
+                System.out.println(result);
+            } else if (end.equals(now) || end.isBefore(now)) {
+                String result = mosfetControlService.switchOffMosfet();
+                System.out.println(result);
+            }
+        }
+        else{
+            return "No user found for this crop";
+        }
+        return null;
     }
 }

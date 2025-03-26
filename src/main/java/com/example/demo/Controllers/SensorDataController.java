@@ -6,6 +6,7 @@ import java.time.temporal.WeekFields;
 import java.util.*;
 import java.util.stream.Collectors;
 
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -36,15 +37,28 @@ public class SensorDataController {
     }
     
     @GetMapping("/latest")
-    public ResponseEntity<SensorData> getLatestSensorData(@RequestParam(required = false) Long userId) {
-    SensorData latestData;
-    if (userId != null) {
-        latestData = sensorDataService.getLatestDataByUser(userId);
-    } else {
-        latestData = sensorDataService.getLatestData();
+    public ResponseEntity<?> getLatestSensorData(@RequestParam(required = false) Long userId) {
+        try {
+            SensorData latestData;
+            if (userId != null) {
+                latestData = sensorDataService.getLatestDataByUser(userId);
+            } else {
+                latestData = sensorDataService.getLatestData();
+            }
+            
+            if (latestData == null) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                                    .body("No sensor data found.");
+            }
+            return ResponseEntity.ok(latestData);
+        } catch (Exception e) {
+            // Log the exception details for debugging
+            System.err.println("Error fetching sensor data: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                                .body("Error fetching sensor data.");
+        }
     }
-    return ResponseEntity.ok(latestData);
-}
+
 
     
     @GetMapping("/type/{type}")

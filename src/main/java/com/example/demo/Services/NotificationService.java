@@ -15,7 +15,6 @@ public class NotificationService {
         this.notificationRepository = notificationRepository;
     }
 
-    // Updated to include the user
     public Notification createNotification(String message, Users user) {
         Notification notification = new Notification(message, user);
         return notificationRepository.save(notification);
@@ -23,5 +22,10 @@ public class NotificationService {
 
     public List<Notification> getAllNotifications() {
         return notificationRepository.findAll();
+    }
+    
+    // New method for user-specific notifications
+    public List<Notification> getNotificationsForUser(Long userId) {
+        return notificationRepository.findByUser_IdOrderByCreatedAtDesc(userId);
     }
 }

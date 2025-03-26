@@ -1,5 +1,6 @@
 package com.example.demo.Controllers;
 
+import com.example.demo.Entities.UserCrops;
 import com.example.demo.Services.IrrigationService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -64,5 +65,11 @@ public class IrrigationController {
             @RequestParam Long userId,
             @RequestParam Long cropId) {
         return ResponseEntity.ok(irrigationService.getCurrentStatus(userId, cropId));
+    }
+    @PutMapping("/automate")
+    public ResponseEntity<String> automateValveControl(
+            @RequestParam Long userId,
+            @RequestParam Long cropId) {
+        IrrigationService.automaticValveControl(userId, cropId);
     }
 }

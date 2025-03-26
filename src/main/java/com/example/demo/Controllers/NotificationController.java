@@ -23,9 +23,15 @@ public class NotificationController {
          this.userRepository = userRepository;
     }
 
+    // Updated GET endpoint to support filtering by userId via query parameter
     @GetMapping
-    public ResponseEntity<List<Notification>> getNotifications() {
-         List<Notification> notifications = notificationService.getAllNotifications();
+    public ResponseEntity<List<Notification>> getNotifications(@RequestParam(required = false) Long userId) {
+         List<Notification> notifications;
+         if (userId != null) {
+             notifications = notificationService.getNotificationsForUser(userId);
+         } else {
+             notifications = notificationService.getAllNotifications();
+         }
          return ResponseEntity.ok(notifications);
     }
 
