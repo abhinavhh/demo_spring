@@ -39,3 +39,7 @@ target/
 
 ### VS Code ###
 .vscode/
+
+.env
+.env.development
+.env

@@ -1,21 +1,25 @@
 package com.example.demo.Configuration;
 
-import org.springframework.context.annotation.Bean;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 import org.springframework.web.filter.CorsFilter;
 
+import java.util.Arrays;
 import java.util.List;
 
 @Configuration
 public class CorsConfig {
 
-    @Bean
+    @Value("${cors.allowed-origins}")
+    private String allowedOrigins;
     public CorsFilter corsFilter() {
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         CorsConfiguration config = new CorsConfiguration();
-        config.setAllowedOriginPatterns(List.of("http://localhost:5173"));
+
+        List<String> originPatterns = Arrays.asList(allowedOrigins.split(","));
+        config.setAllowedOriginPatterns(originPatterns);
 
         config.addAllowedMethod("*");
         config.addAllowedHeader("*");
