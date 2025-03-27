@@ -1,10 +1,13 @@
 package com.example.demo;
 
+
 import io.github.cdimascio.dotenv.Dotenv;
+
 import org.springframework.boot.SpringApplication;
 
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.scheduling.annotation.EnableScheduling;
+
 
 
 @EnableScheduling
@@ -23,5 +26,7 @@ public class DemoApplication {
 			System.setProperty("MAIL_PASSWORD", dotenv.get("MAIL_PASSWORD", "yourLocalMailPassword"));
 		}
 		SpringApplication.run(DemoApplication.class, args);
+	
+
 	}
 }

@@ -61,7 +61,7 @@ public class SensorDataWebSocketHandler implements WebSocketHandler {
             public void run() {
                 saveSensorDataToDatabase();
             }
-        }, 0, 60000); // 60000ms = 1 minute
+        }, 0, 10000); // 60000ms = 1 minute
 
         // Schedule threshold check every 1 minute (adjust interval as needed)
         new Timer(true).scheduleAtFixedRate(new TimerTask() {
