@@ -8,7 +8,7 @@ import com.example.demo.Repositories.CropRepository;
 import com.example.demo.Repositories.IrrigationSettingsRepository;
 import com.example.demo.Repositories.UserCropRepository;
 import com.example.demo.Repositories.UserRepository;
-import org.springframework.cglib.core.Local;
+
 import org.springframework.stereotype.Service;
 
 import java.time.LocalTime;
