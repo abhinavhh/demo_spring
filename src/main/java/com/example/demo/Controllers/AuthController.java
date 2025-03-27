@@ -7,12 +7,11 @@ import java.util.Optional;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-
 import com.example.demo.Entities.Users;
 import com.example.demo.Repositories.UserRepository;
 import com.example.demo.Services.UserService;
 
-@CrossOrigin(origins = "http://localhost:5173")
+
 @RestController
 @RequestMapping("/api/auth")
 public class AuthController {

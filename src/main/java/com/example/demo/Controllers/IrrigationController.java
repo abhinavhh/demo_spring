@@ -5,7 +5,6 @@ import com.example.demo.Services.IrrigationService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-@CrossOrigin(origins = "http://localhost:5173")
 @RestController
 @RequestMapping("/api/irrigation")
 public class IrrigationController {

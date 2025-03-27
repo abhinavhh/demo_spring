@@ -10,7 +10,10 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 @Entity
 @Getter
 @Setter
-@Table(name = "users") // Renamed to avoid reserved keyword conflict
+@Table(name = "users", uniqueConstraints = {
+    @UniqueConstraint(columnNames = "email"),
+    @UniqueConstraint(columnNames = "username")
+}) // Renamed to avoid reserved keyword conflict
 public class Users {
 
     @Id
@@ -29,6 +32,7 @@ public class Users {
     @Column(nullable = false)
     private String email;
 
+
     // Relationship with user-specific crop selections
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
     @JsonIgnore
@@ -38,6 +42,7 @@ public class Users {
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
     @JsonIgnore
     private List<SensorData> sensorData;
+
 
     public Users() {}
 
@@ -88,6 +93,7 @@ public class Users {
     public void setEmail(String email) {
         this.email = email;
     }
+
  
     public List<UserCrops> getUserCrops() {
         return userCrops;
@@ -105,3 +111,4 @@ public class Users {
         this.sensorData = sensorData;
     }
 }
+
