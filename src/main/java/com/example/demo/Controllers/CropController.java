@@ -2,13 +2,11 @@ package com.example.demo.Controllers;
 
 import com.example.demo.Entities.Crops;
 import com.example.demo.Repositories.CropRepository;
-
 import java.time.LocalTime;
 import java.time.format.DateTimeParseException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -42,8 +40,8 @@ public class CropController {
                 cropMap.put("maxHumidity", crop.getMaxHumidity());
                 cropMap.put("minSoilMoisture", crop.getMinSoilMoisture());
                 cropMap.put("maxSoilMoisture", crop.getMaxSoilMoisture());
-                cropMap.put("irrigationStartTime", crop.getIrrigationStartTime()); // Include irrigationStartTime
-                cropMap.put("irrigationEndTime", crop.getIrrigationEndTime()); // Include irrigationEndTime
+                cropMap.put("irrigationStartTime", crop.getIrrigationStartTime());
+                cropMap.put("irrigationEndTime", crop.getIrrigationEndTime());
                 return cropMap;
             })
             .toList();
@@ -63,8 +61,8 @@ public class CropController {
                 cropMap.put("maxHumidity", crop.getMaxHumidity());
                 cropMap.put("minSoilMoisture", crop.getMinSoilMoisture());
                 cropMap.put("maxSoilMoisture", crop.getMaxSoilMoisture());
-                cropMap.put("irrigationStartTime", crop.getIrrigationStartTime()); // Include irrigationStartTime
-                cropMap.put("irrigationEndTime", crop.getIrrigationEndTime()); // Include irrigationEndTime
+                cropMap.put("irrigationStartTime", crop.getIrrigationStartTime());
+                cropMap.put("irrigationEndTime", crop.getIrrigationEndTime());
                 return cropMap;
             })
             .map(ResponseEntity::ok)
@@ -76,14 +74,13 @@ public class CropController {
         String startTime = irrigationTime.get("startTime");
         String endTime = irrigationTime.get("endTime");
 
-        // Validate input
         if (startTime == null || endTime == null) {
             return ResponseEntity.badRequest().body("Start time and end time are required.");
         }
 
         try {
-            LocalTime.parse(startTime); // Validate startTime format
-            LocalTime.parse(endTime); // Validate endTime format
+            LocalTime.parse(startTime);
+            LocalTime.parse(endTime);
         } catch (DateTimeParseException e) {
             return ResponseEntity.badRequest().body("Invalid time format. Please use HH:mm.");
         }
@@ -93,7 +90,6 @@ public class CropController {
 
         crop.setIrrigationStartTime(LocalTime.parse(startTime));
         crop.setIrrigationEndTime(LocalTime.parse(endTime));
-
         cropRepository.save(crop);
 
         return ResponseEntity.ok("Irrigation time set successfully!");

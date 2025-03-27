@@ -19,13 +19,12 @@ public class UserService {
     private final UserRepository userRepository;
     private final JavaMailSender emailSender;
     private final Map<String, OTPData> otpStorage = new ConcurrentHashMap<>();
-    private static final int OTP_EXPIRY_MINUTES = 5; // Set as constant instead of using @Value
+    private static final int OTP_EXPIRY_MINUTES = 5;
 
     // Inner class for OTP data
     private static class OTPData {
         private final String otp;
         private final LocalDateTime expiryTime;
-        
 
         public OTPData(String otp, LocalDateTime expiryTime) {
             this.otp = otp;
@@ -66,7 +65,6 @@ public class UserService {
 
         Users user = existingUser.get();
 
-        // Check if new username is different and available
         if (!currentUsername.equals(updatedUser.getUsername())) {
             if (userRepository.findByUsername(updatedUser.getUsername()).isPresent()) {
                 return "Username already taken";
@@ -74,7 +72,6 @@ public class UserService {
             user.setUsername(updatedUser.getUsername());
         }
 
-        // Check if email is being updated
         if (!user.getEmail().equals(updatedUser.getEmail())) {
             if (userRepository.findByEmail(updatedUser.getEmail()).isPresent()) {
                 return "Email already in use";
@@ -85,6 +82,7 @@ public class UserService {
         userRepository.save(user);
         return "Profile updated successfully";
     }
+    
     @Autowired
     private EmailService emailService;
     
@@ -98,11 +96,9 @@ public class UserService {
         LocalDateTime expiryTime = LocalDateTime.now().plusMinutes(OTP_EXPIRY_MINUTES);
         otpStorage.put(email, new OTPData(otp, expiryTime));
         
-        // Here you would typically send the OTP via email
-        String subject = "Password Reset otp Mail";
+        String subject = "Password Reset OTP Mail";
         emailService.sendOTP(email, otp, subject);
-        return "OTP send to your email successfully";
-        
+        return "OTP sent to your email successfully";
     }
 
     public boolean verifyOTP(String email, String otp) {
@@ -110,12 +106,10 @@ public class UserService {
         if (otpData == null) {
             return false;
         }
-
         if (LocalDateTime.now().isAfter(otpData.getExpiryTime())) {
             otpStorage.remove(email);
             return false;
         }
-
         return otpData.getOtp().equals(otp);
     }
 
@@ -123,28 +117,24 @@ public class UserService {
         if (!verifyOTP(email, otp)) {
             return "Invalid or expired OTP";
         }
-
         Optional<Users> user = userRepository.findByEmail(email);
         if (user.isEmpty()) {
             return "User not found";
         }
-
         user.get().setPassword(newPassword);
         userRepository.save(user.get());
         otpStorage.remove(email);
         return "Password updated successfully";
     }
+
     public String generateAndSendOTP(String email) {
         Optional<Users> user = userRepository.findByEmail(email);
         if (user.isEmpty()) {
             return "User not found";
         }
-
         String otp = String.format("%06d", new Random().nextInt(999999));
         LocalDateTime expiryTime = LocalDateTime.now().plusMinutes(OTP_EXPIRY_MINUTES);
         otpStorage.put(email, new OTPData(otp, expiryTime));
-
-        // Send OTP via email
         try {
             SimpleMailMessage message = new SimpleMailMessage();
             message.setTo(email);
@@ -154,7 +144,7 @@ public class UserService {
             emailSender.send(message);
             return "OTP sent successfully to your email";
         } catch (Exception e) {
-            otpStorage.remove(email); // Clean up OTP if email sending fails
+            otpStorage.remove(email);
             return "Failed to send OTP: " + e.getMessage();
         }
     }

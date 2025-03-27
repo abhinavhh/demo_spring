@@ -1,7 +1,14 @@
 package com.example.demo.Services;
 
 import com.example.demo.Entities.Crops;
+import com.example.demo.Entities.IrrigationSettings;
+import com.example.demo.Entities.UserCrops;
+import com.example.demo.Entities.Users;
 import com.example.demo.Repositories.CropRepository;
+import com.example.demo.Repositories.IrrigationSettingsRepository;
+import com.example.demo.Repositories.UserCropRepository;
+import com.example.demo.Repositories.UserRepository;
+import org.springframework.cglib.core.Local;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalTime;
@@ -11,110 +18,179 @@ import java.util.Optional;
 public class IrrigationService {
 
     private final CropRepository cropRepository;
-    private boolean valveOpen = false;
+    private final IrrigationSettingsRepository irrigationSettingsRepository;
+    private final UserRepository userRepository;
+    private final UserCropRepository userCropRepository;
+    private final MosfetControlService mosfetControlService;
 
-    public IrrigationService(CropRepository cropRepository) {
+    public IrrigationService(CropRepository cropRepository,
+                             IrrigationSettingsRepository irrigationSettingsRepository,
+                             UserRepository userRepository,
+                             UserCropRepository userCropRepository,
+                             MosfetControlService mosfetControlService) {
         this.cropRepository = cropRepository;
+        this.irrigationSettingsRepository = irrigationSettingsRepository;
+        this.userRepository = userRepository;
+        this.userCropRepository = userCropRepository;
+        this.mosfetControlService = mosfetControlService;
     }
 
-    public void setIrrigationTiming(Long cropId, String startTime, String endTime) {
+    // Set irrigation timing for a crop for a specific user.
+    public void setIrrigationTiming(Long userId, Long cropId, String startTime, String endTime) {
         Optional<Crops> optionalCrop = cropRepository.findById(cropId);
         if (optionalCrop.isEmpty()) {
             throw new RuntimeException("Crop not found!");
         }
-    
         Crops crop = optionalCrop.get();
-        crop.setIrrigationStartTime(LocalTime.parse(startTime));
-        crop.setIrrigationEndTime(LocalTime.parse(endTime));
-        cropRepository.save(crop);
-    }
-    public String analyzeAndControlIrrigation(Long cropId) {
-        Optional<Crops> optionalCrop = cropRepository.findById(cropId);
-        if (optionalCrop.isEmpty()) throw new RuntimeException("Crop not found!");
-    
-        Crops crop = optionalCrop.get();
-    
-        // Retrieve irrigation start and end times from the crop
-        LocalTime startTime = crop.getIrrigationStartTime();
-        LocalTime endTime = crop.getIrrigationEndTime();
-    
-        if (startTime == null || endTime == null) {
-            throw new RuntimeException("Irrigation timing not set for crop: " + crop.getName());
+
+        LocalTime start = LocalTime.parse(startTime);
+        LocalTime end = LocalTime.parse(endTime);
+
+        Optional<IrrigationSettings> optionalSettings = irrigationSettingsRepository.findByCropIdAndUserId(cropId, userId);
+        IrrigationSettings settings;
+        if (optionalSettings.isPresent()) {
+            settings = optionalSettings.get();
+            settings.setStartTime(start);
+            settings.setEndTime(end);
+        } else {
+            Users user = userRepository.findById(userId)
+                    .orElseThrow(() -> new RuntimeException("User not found"));
+            settings = new IrrigationSettings(crop, start, end, false, user);
         }
-    
-        StringBuilder result = new StringBuilder("Irrigation Analysis for Crop: " + crop.getName() + "\n");
-    
+        irrigationSettingsRepository.save(settings);
+    }
+
+    // Retrieve irrigation timing for a specific user and crop.
+    public String getIrrigationTiming(Long userId, Long cropId) {
+        Optional<IrrigationSettings> optionalSettings = irrigationSettingsRepository.findByCropIdAndUserId(cropId, userId);
+        if (optionalSettings.isEmpty()) {
+            return "Irrigation timing not set for this crop and user.";
+        }
+        IrrigationSettings settings = optionalSettings.get();
+        return "Crop: " + settings.getCrop().getName() +
+               "\nStart Time: " + settings.getStartTime() +
+               "\nEnd Time: " + settings.getEndTime();
+    }
+
+    // Analyze sensor data and determine if irrigation should occur, based on the user’s settings.
+    public String analyzeAndControlIrrigation(Long userId, Long cropId) {
+        Optional<IrrigationSettings> optionalSettings = irrigationSettingsRepository.findByCropIdAndUserId(cropId, userId);
+        if (optionalSettings.isEmpty()) {
+            throw new RuntimeException("Irrigation settings not found for user and crop.");
+        }
+        IrrigationSettings settings = optionalSettings.get();
+        LocalTime startTime = settings.getStartTime();
+        LocalTime endTime = settings.getEndTime();
+
+        if (startTime == null || endTime == null) {
+            throw new RuntimeException("Irrigation timing not set for crop: " + settings.getCrop().getName());
+        }
+
+        StringBuilder result = new StringBuilder("Irrigation Analysis for Crop: " + settings.getCrop().getName() + "\n");
+
+        // Check if current time falls within the irrigation window.
         if (!(LocalTime.now().isAfter(startTime) && LocalTime.now().isBefore(endTime))) {
             return "Not within the irrigation time window.";
         }
-    
-        boolean valveOpen = false;
-    
-        // Fetch simulated real-time sensor data
+
+        // Fetch simulated real-time sensor data.
         double soilMoisture = Math.random() * 100;
         double temperature = Math.random() * 50;
         double humidity = Math.random() * 100;
-    
+
         result.append("Current Conditions:\n")
-              .append("Soil Moisture: ").append(soilMoisture).append(" (Min: ").append(crop.getMinSoilMoisture()).append(")\n")
-              .append("Temperature: ").append(temperature).append(" (Min: ").append(crop.getMinTemperature()).append(", Max: ").append(crop.getMaxTemperature()).append(")\n")
-              .append("Humidity: ").append(humidity).append(" (Min: ").append(crop.getMinHumidity()).append(", Max: ").append(crop.getMaxHumidity()).append(")\n");
-    
-        // Analyze conditions
-        if (soilMoisture < crop.getMinSoilMoisture()) {
-            valveOpen = true;
+              .append("Soil Moisture: ").append(soilMoisture).append(" (Min: ")
+              .append(settings.getCrop().getMinSoilMoisture()).append(")\n")
+              .append("Temperature: ").append(temperature).append(" (Min: ")
+              .append(settings.getCrop().getMinTemperature()).append(", Max: ")
+              .append(settings.getCrop().getMaxTemperature()).append(")\n")
+              .append("Humidity: ").append(humidity).append(" (Min: ")
+              .append(settings.getCrop().getMinHumidity()).append(", Max: ")
+              .append(settings.getCrop().getMaxHumidity()).append(")\n");
+
+        boolean valveShouldOpen = false;
+        if (soilMoisture < settings.getCrop().getMinSoilMoisture()) {
+            valveShouldOpen = true;
             result.append("Low Soil Moisture Detected. Irrigation Needed.\n");
         }
-        if (temperature > crop.getMaxTemperature()) {
-            valveOpen = true;
+        if (temperature > settings.getCrop().getMaxTemperature()) {
+            valveShouldOpen = true;
             result.append("High Temperature Detected. Irrigation Needed.\n");
         }
-        if (temperature < crop.getMinTemperature()) {
-            valveOpen = true;
+        if (temperature < settings.getCrop().getMinTemperature()) {
+            valveShouldOpen = true;
             result.append("Low Temperature Detected. Irrigation Needed.\n");
         }
-        if (humidity > crop.getMaxHumidity()) {
-            valveOpen = true;
+        if (humidity > settings.getCrop().getMaxHumidity()) {
+            valveShouldOpen = true;
             result.append("High Humidity Detected. Irrigation Needed.\n");
         }
-        if (humidity < crop.getMinHumidity()) {
-            valveOpen = true;
+        if (humidity < settings.getCrop().getMinHumidity()) {
+            valveShouldOpen = true;
             result.append("Low Humidity Detected. Irrigation Needed.\n");
         }
-    
-        if (!valveOpen) {
+
+        if (!valveShouldOpen) {
             result.append("Conditions Optimal. No Irrigation Needed.\n");
         }
-    
+
+        // Update the manual control flag to reflect current valve status.
+        settings.setIsManualControlEnabled(valveShouldOpen);
+        irrigationSettingsRepository.save(settings);
+
         result.append("Irrigation Window Ended.");
-    
         return result.toString();
     }
-    public String getIrrigationTiming(Long cropId) {
-        Optional<Crops> optionalCrop = cropRepository.findById(cropId);
-        if (optionalCrop.isEmpty()) {
-            throw new RuntimeException("Crop not found!");
-        }
-    
-        Crops crop = optionalCrop.get();
-        LocalTime startTime = crop.getIrrigationStartTime();
-        LocalTime endTime = crop.getIrrigationEndTime();
-    
-        if (startTime == null || endTime == null) {
-            return "Irrigation timing not set for crop: " + crop.getName();
-        }
-    
-        return "Crop: " + crop.getName() +
-               "\nStart Time: " + startTime +
-               "\nEnd Time: " + endTime;
-    }
-    
 
-    public void manualValveControl(boolean openValve) {
-        valveOpen = openValve;
+    // Allow manual control of the valve for a specific user and crop.
+    public void manualValveControl(Long userId, Long cropId, boolean openValve) {
+        Optional<UserCrops> optionalSettings = userCropRepository.findByUserIdAndCropId(userId, cropId);
+        if (optionalSettings.isEmpty()) {
+            throw new RuntimeException("crop settings not found for this user and crop.");
+        }
+        UserCrops userCrop = optionalSettings.get();
+        userCrop.setManualControlEnabled(openValve);
+        userCropRepository.save(userCrop);
+        if (openValve) {
+            String result = mosfetControlService.switchOnMosfet();
+            // Optionally log or process result
+            System.out.println("MOSFET switch on result: " + result);
+        } else {
+            String result = mosfetControlService.switchOffMosfet();
+            // Optionally log or process result
+            System.out.println("MOSFET switch off result: " + result);
+        }
     }
 
-    public String getCurrentStatus() {
-        return valveOpen ? "Valve is OPEN" : "Valve is CLOSED";
+    // Retrieve the current valve status for a specific user and crop.
+    public String getCurrentStatus(Long userId, Long cropId) {
+        Optional<IrrigationSettings> optionalSettings = irrigationSettingsRepository.findByCropIdAndUserId(cropId, userId);
+        if (optionalSettings.isEmpty()) {
+            return "No irrigation settings found for this user and crop.";
+        }
+        IrrigationSettings settings = optionalSettings.get();
+        return settings.getIsManualControlEnabled() ? "Valve is OPEN" : "Valve is CLOSED";
+    }
+
+    // automatic valve open code
+    public String automaticValveControl(Long userId, Long cropId) {
+        Optional<UserCrops> autoSettings = userCropRepository.findByUserIdAndCropId(userId, cropId);
+        if (autoSettings.isPresent()) {
+            UserCrops userCrops = autoSettings.get();
+            LocalTime start = userCrops.getCustomIrrigationStartTime();
+            LocalTime end = userCrops.getCustomIrrigationEndTime();
+            LocalTime now = LocalTime.now();
+            if (start.equals(now) || start.isBefore(now)) {
+                String result = mosfetControlService.switchOnMosfet();
+                System.out.println(result);
+            } else if (end.equals(now) || end.isBefore(now)) {
+                String result = mosfetControlService.switchOffMosfet();
+                System.out.println(result);
+            }
+        }
+        else{
+            return "No user found for this crop";
+        }
+        return null;
     }
 }

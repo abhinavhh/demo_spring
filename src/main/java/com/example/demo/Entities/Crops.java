@@ -10,21 +10,16 @@ import java.time.LocalTime;
 @Getter
 @Setter
 @Table(name = "crops")
-public class Crops {
+public class Crops{
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @ManyToOne
-    private Users user;
-
+    // Global crop details – these serve as default settings
     private String name;
-
     private String description;
-
     private String imageUrl;
-
     private Double minTemperature;
     private Double maxTemperature;
     private Double minHumidity;
@@ -41,8 +36,8 @@ public class Crops {
     public Crops() {}
 
     public Crops(String name, Double minTemperature, Double maxTemperature, Double minHumidity, 
-                 Double maxHumidity, Double minSoilMoisture, Double maxSoilMoisture, 
-                 Users user, LocalTime irrigationStartTime, LocalTime irrigationEndTime) {
+                Double maxHumidity, Double minSoilMoisture, Double maxSoilMoisture,
+                LocalTime irrigationStartTime, LocalTime irrigationEndTime) {
         this.name = name;
         this.minTemperature = minTemperature;
         this.maxTemperature = maxTemperature;
@@ -50,7 +45,6 @@ public class Crops {
         this.maxHumidity = maxHumidity;
         this.minSoilMoisture = minSoilMoisture;
         this.maxSoilMoisture = maxSoilMoisture;
-        this.user = user;
         this.irrigationStartTime = irrigationStartTime;
         this.irrigationEndTime = irrigationEndTime;
     }
@@ -119,15 +113,7 @@ public class Crops {
     public void setMaxSoilMoisture(Double maxSoilMoisture) {
         this.maxSoilMoisture = maxSoilMoisture;
     }
-
-    public Users getUser() {
-        return user;
-    }
-
-    public void setUser(Users user) {
-        this.user = user;
-    }
-
+    
     public LocalTime getIrrigationStartTime() {
         return irrigationStartTime;
     }

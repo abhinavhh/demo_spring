@@ -1,9 +1,6 @@
 package com.example.demo.Controllers;
 
 import java.util.Map;
-
-// UserController.java
-
 import java.util.Optional;
 
 import org.springframework.http.ResponseEntity;
@@ -51,7 +48,7 @@ public class UserController {
             user.setUsername(userDetails.get("username"));
             user.setEmail(userDetails.get("email"));
             Users savedUser = userRepository.save(user);
-            return ResponseEntity.ok(savedUser);  // Return the updated user object
+            return ResponseEntity.ok(savedUser);
         }
         return ResponseEntity.notFound().build();
     }
@@ -67,9 +64,7 @@ public class UserController {
     }
 
     @PostMapping("/verify-otp")
-    public ResponseEntity<String> verifyOTP(
-            @RequestParam String email,
-            @RequestParam String otp) {
+    public ResponseEntity<String> verifyOTP(@RequestParam String email, @RequestParam String otp) {
         try {
             boolean isValid = userService.verifyOTP(email, otp);
             if (isValid) {
@@ -82,10 +77,7 @@ public class UserController {
     }
 
     @PostMapping("/reset-password")
-    public ResponseEntity<String> resetPassword(
-            @RequestParam String email,
-            @RequestParam String otp,
-            @RequestParam String newPassword) {
+    public ResponseEntity<String> resetPassword(@RequestParam String email, @RequestParam String otp, @RequestParam String newPassword) {
         try {
             String result = userService.resetPassword(email, otp, newPassword);
             return ResponseEntity.ok(result);
@@ -93,4 +85,6 @@ public class UserController {
             return ResponseEntity.badRequest().body(e.getMessage());
         }
     }
+    
+    // Optional: You can add endpoints here to expose user-specific crop selections or sensor data if needed.
 }
