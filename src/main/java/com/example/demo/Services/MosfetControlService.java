@@ -12,7 +12,7 @@ public class MosfetControlService {
 
     private final RestTemplate restTemplate;
     // URL of the ESP32 endpoint; update with your actual IP/hostname.
-    private final String esp32Url = "http://192.168.1.37";
+    private final String esp32Url = "http://192.168.1.49";
     private static final Logger logger = LoggerFactory.getLogger(MosfetControlService.class);
 
     public MosfetControlService(RestTemplateBuilder builder) {

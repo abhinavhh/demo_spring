@@ -4,7 +4,7 @@ package com.example.demo.Controllers;
 import com.example.demo.Services.IrrigationService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-
+@CrossOrigin(origins = "http://localhost:5173")
 @RestController
 @RequestMapping("/api/irrigation")
 public class IrrigationController {
@@ -51,10 +51,12 @@ public class IrrigationController {
     public ResponseEntity<String> manualValveControl(
             @RequestParam Long userId,
             @RequestParam Long cropId,
-            @RequestParam boolean openValve) {
-        irrigationService.manualValveControl(userId, cropId, openValve);
-        return ResponseEntity.ok(openValve ? "Valve opened manually" : "Valve closed manually.");
+            @RequestParam boolean open,
+            @RequestParam boolean close) {
+        irrigationService.manualValveControl(userId, cropId, open, close);
+        return ResponseEntity.ok(open ? "Valve opened manually" : "Valve closed manually.");
     }
+
 
     /**
      * Fetch the current irrigation status for a specific user and crop.

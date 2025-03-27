@@ -144,15 +144,17 @@ public class IrrigationService {
     }
 
     // Allow manual control of the valve for a specific user and crop.
-    public void manualValveControl(Long userId, Long cropId, boolean openValve) {
+    public void manualValveControl(Long userId, Long cropId, boolean open, boolean close) {
         Optional<UserCrops> optionalSettings = userCropRepository.findByUserIdAndCropId(userId, cropId);
         if (optionalSettings.isEmpty()) {
             throw new RuntimeException("crop settings not found for this user and crop.");
         }
         UserCrops userCrop = optionalSettings.get();
-        userCrop.setManualControlEnabled(openValve);
+        userCrop.setManualOpenEnabled(open);
+        userCrop.setManualCloseEnabled(close);
+        
         userCropRepository.save(userCrop);
-        if (openValve) {
+        if (open) {
             String result = mosfetControlService.switchOnMosfet();
             // Optionally log or process result
             System.out.println("MOSFET switch on result: " + result);
@@ -173,7 +175,7 @@ public class IrrigationService {
         return settings.getIsManualControlEnabled() ? "Valve is OPEN" : "Valve is CLOSED";
     }
     
-    @Scheduled(fixedRate = 20000) // Runs every 10 seconds
+    @Scheduled(fixedRate = 10000) // Runs every 10 seconds
     public void scheduledAutomaticValveControl() {
         // Retrieve all user crops that require automated control
         List<UserCrops> userCropsList = userCropRepository.findAll();
@@ -188,6 +190,10 @@ public class IrrigationService {
         Optional<UserCrops> autoSettings = userCropRepository.findByUserIdAndCropId(userId, cropId);
         if (autoSettings.isPresent()) {
             UserCrops userCrops = autoSettings.get();
+            if (userCrops.isManualOpenEnabled() || userCrops.isManualCloseEnabled()) {
+                System.out.println("Manual control active for userId: " + userId + ", cropId: " + cropId + ". Skipping auto control.");
+                return "Manual control active, skipping auto control";
+            }
             LocalTime start = userCrops.getCustomIrrigationStartTime();
             LocalTime end = userCrops.getCustomIrrigationEndTime();
             LocalTime now = LocalTime.now();
@@ -231,10 +237,12 @@ public class IrrigationService {
                         }
                     }
                 }
-            } else {
-                String result = mosfetControlService.switchOffMosfet();
-                System.out.println("Outside irrigation window. Valve OFF: " + result);
-            }
+            } 
+            
+            // else {
+            //     String result = mosfetControlService.switchOffMosfet();
+            //     System.out.println("Outside irrigation window. Valve OFF: " + result);
+            // }
             return "Control action executed";
         } else {
             return "No user found for this crop";

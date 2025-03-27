@@ -21,13 +21,13 @@ COPY --from=build /app/target/*.jar app.jar
 EXPOSE 8080
 
 # Set environment variables (these are defaults and can be overridden at runtime)
-ENV DB_URL=jdbc:postgresql://localhost:5432/postgres
-ENV DB_USERNAME=postgres
-ENV DB_PASSWORD=Abhinav@123
-ENV MAIL_HOST=smtp.gmail.com
-ENV MAIL_PORT=587
-ENV MAIL_USERNAME=smartirrigation5080@gmail.com
-ENV MAIL_PASSWORD="wgxb hxnf wbtp dsds"
+# ENV DB_URL=jdbc:postgresql://localhost:5432/postgres
+# ENV DB_USERNAME=postgres
+# ENV DB_PASSWORD=Abhinav@123
+# ENV MAIL_HOST=smtp.gmail.com
+# ENV MAIL_PORT=587
+# ENV MAIL_USERNAME=smartirrigation5080@gmail.com
+# ENV MAIL_PASSWORD="wgxb hxnf wbtp dsds"
 
 # Run the application
 ENTRYPOINT ["java", "-jar", "app.jar"]

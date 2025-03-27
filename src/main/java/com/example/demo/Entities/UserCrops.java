@@ -36,9 +36,11 @@ public class UserCrops {
     private LocalTime customIrrigationEndTime;
 
     // Field to store manual control state
-    @Column(name = "manual_control_enabled")
-    private Boolean manualControlEnabled;
+    @Column(name = "manual_open_enabled")
+    private Boolean manualOpenEnabled;
 
+    @Column(name = "manual_close_enabled")
+    private Boolean manualCloseEnabled;
     // Getters and Setters
 
     public Long getId() {
@@ -129,11 +131,19 @@ public class UserCrops {
         this.customIrrigationEndTime = customIrrigationEndTime;
     }
 
-    public Boolean isManualControlEnabled() {
-        return manualControlEnabled;
+    public Boolean isManualOpenEnabled() {
+        return manualOpenEnabled;
     }
 
-    public void setManualControlEnabled(Boolean manualControlEnabled) {
-        this.manualControlEnabled = manualControlEnabled;
+    public void setManualOpenEnabled(Boolean manualOpenEnabled) {
+        this.manualOpenEnabled = manualOpenEnabled;
+    }
+
+    public Boolean isManualCloseEnabled() {
+        return manualCloseEnabled;
+    }
+
+    public void setManualCloseEnabled(Boolean manualCloseEnabled) {
+        this.manualCloseEnabled = manualCloseEnabled;
     }
 }
