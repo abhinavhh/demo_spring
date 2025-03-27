@@ -48,7 +48,7 @@ public class SensorData {
         this.sensorType = sensorType;
     }
 
-    public double getValue() {
+    public Double getValue() {
         return value;
     }
 

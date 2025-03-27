@@ -39,3 +39,5 @@ target/
 
 ### VS Code ###
 .vscode/
+.env
+*.env

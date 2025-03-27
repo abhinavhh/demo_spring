@@ -1,17 +1,15 @@
 package com.example.demo.Services;
 
-import com.example.demo.Entities.Crops;
-import com.example.demo.Entities.IrrigationSettings;
-import com.example.demo.Entities.UserCrops;
-import com.example.demo.Entities.Users;
-import com.example.demo.Repositories.CropRepository;
-import com.example.demo.Repositories.IrrigationSettingsRepository;
-import com.example.demo.Repositories.UserCropRepository;
-import com.example.demo.Repositories.UserRepository;
-import org.springframework.cglib.core.Local;
+import com.example.demo.Entities.*;
+import com.example.demo.Repositories.*;
+
+import org.springframework.data.domain.PageRequest;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
+
 import java.time.LocalTime;
+import java.util.List;
 import java.util.Optional;
 
 @Service
@@ -22,17 +20,20 @@ public class IrrigationService {
     private final UserRepository userRepository;
     private final UserCropRepository userCropRepository;
     private final MosfetControlService mosfetControlService;
+    private final SensorDataRepository sensorDataRepository;
 
     public IrrigationService(CropRepository cropRepository,
                              IrrigationSettingsRepository irrigationSettingsRepository,
                              UserRepository userRepository,
                              UserCropRepository userCropRepository,
-                             MosfetControlService mosfetControlService) {
+                             MosfetControlService mosfetControlService,
+                             SensorDataRepository sensorDataRepository) {
         this.cropRepository = cropRepository;
         this.irrigationSettingsRepository = irrigationSettingsRepository;
         this.userRepository = userRepository;
         this.userCropRepository = userCropRepository;
         this.mosfetControlService = mosfetControlService;
+        this.sensorDataRepository = sensorDataRepository;
     }
 
     // Set irrigation timing for a crop for a specific user.
@@ -171,7 +172,17 @@ public class IrrigationService {
         IrrigationSettings settings = optionalSettings.get();
         return settings.getIsManualControlEnabled() ? "Valve is OPEN" : "Valve is CLOSED";
     }
-
+    
+    @Scheduled(fixedRate = 20000) // Runs every 10 seconds
+    public void scheduledAutomaticValveControl() {
+        // Retrieve all user crops that require automated control
+        List<UserCrops> userCropsList = userCropRepository.findAll();
+        for (UserCrops userCrops : userCropsList) {
+            Long userId = userCrops.getUser().getId();
+            Long cropId = userCrops.getCrop().getId();
+            automaticValveControl(userId, cropId);
+        }
+    }
     // automatic valve open code
     public String automaticValveControl(Long userId, Long cropId) {
         Optional<UserCrops> autoSettings = userCropRepository.findByUserIdAndCropId(userId, cropId);
@@ -180,17 +191,53 @@ public class IrrigationService {
             LocalTime start = userCrops.getCustomIrrigationStartTime();
             LocalTime end = userCrops.getCustomIrrigationEndTime();
             LocalTime now = LocalTime.now();
-            if (start.equals(now) || start.isBefore(now)) {
-                String result = mosfetControlService.switchOnMosfet();
-                System.out.println(result);
-            } else if (end.equals(now) || end.isBefore(now)) {
+
+            // Check if current time is within the irrigation window
+            if (now.isAfter(start) && now.isBefore(end)) {
+                // Retrieve latest sensor data, expecting three entries: Temperature, Humidity, SoilMoisture
+                List<SensorData> sensorDataList = sensorDataRepository.findLatestSensorData(PageRequest.of(0, 4));
+                if (sensorDataList.isEmpty()) {
+                    System.out.println("No sensor data available.");
+                } else {
+                    Double temperature = null;
+                    Double humidity = null;
+                    Double soilMoisture = null;
+                    for (SensorData data : sensorDataList) {
+                        System.out.println("Sensor Type: " + data.getSensorType() + ", Value: " + data.getValue());
+                        String sensorTypeNormalized = data.getSensorType().trim().toLowerCase();
+                        if ("temperature".equals(sensorTypeNormalized)) {
+                            temperature = data.getValue();
+                        } else if ("humidity".equals(sensorTypeNormalized)) {
+                            humidity = data.getValue();
+                        } else if ("soilmoisture".equals(sensorTypeNormalized)) {
+                            soilMoisture = data.getValue();
+                        }
+                    }
+                    if (temperature == null || humidity == null || soilMoisture == null) {
+                        System.out.println("Incomplete sensor data.");
+                    } else {
+                        boolean withinTempRange = temperature >= userCrops.getCustomMinTemperature() &&
+                                temperature <= userCrops.getCustomMaxTemperature();
+                        boolean withinHumidityRange = humidity >= userCrops.getCustomMinHumidity() &&
+                                humidity <= userCrops.getCustomMaxHumidity();
+                        boolean withinSoilMoistureRange = soilMoisture >= 65;
+
+                        if (withinTempRange && withinHumidityRange && withinSoilMoistureRange) {
+                            String result = mosfetControlService.switchOnMosfet();
+                            System.out.println("Valve ON: " + result);
+                        } else {
+                            String result = mosfetControlService.switchOffMosfet();
+                            System.out.println("Valve OFF: " + result);
+                        }
+                    }
+                }
+            } else {
                 String result = mosfetControlService.switchOffMosfet();
-                System.out.println(result);
+                System.out.println("Outside irrigation window. Valve OFF: " + result);
             }
-        }
-        else{
+            return "Control action executed";
+        } else {
             return "No user found for this crop";
         }
-        return null;
     }
 }
