@@ -1,12 +1,9 @@
 package com.example.demo.Entities;
 
 import jakarta.persistence.*;
-import lombok.Getter;
-import lombok.Setter;
+import java.time.LocalTime;
 
 @Entity
-@Getter
-@Setter
 @Table(name = "user_crops")
 public class UserCrops {
 
@@ -14,36 +11,129 @@ public class UserCrops {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @ManyToOne
-    @JoinColumn(name = "user_id", nullable = false)
+    // Mapping to the user (assumes you have a Users entity)
+    @ManyToOne(optional = false)
+    @JoinColumn(name = "user_id")
     private Users user;
 
-    @ManyToOne
-    @JoinColumn(name = "crop_id", nullable = false)
+    // Mapping to the global Crop record
+    @ManyToOne(optional = false)
+    @JoinColumn(name = "crop_id")
     private Crops crop;
 
-    private Double userMinTemperature;
-    private Double userMaxTemperature;
-    private Double userMinHumidity;
-    private Double userMaxHumidity;
-    private Double userMinSoilMoisture;
-    private Double userMaxSoilMoisture;
+    // User-specific overrides – if not provided these can default to the Crop’s values
+    private Double customMinTemperature;
+    private Double customMaxTemperature;
+    private Double customMinHumidity;
+    private Double customMaxHumidity;
+    private Double customMinSoilMoisture;
+    private Double customMaxSoilMoisture;
 
-    @Column(nullable = false)
-    private Boolean isActive = true;
+    @Column(name = "irrigation_start_time")
+    private LocalTime customIrrigationStartTime;
 
-    public UserCrops() {}
+    @Column(name = "irrigation_end_time")
+    private LocalTime customIrrigationEndTime;
 
-    public UserCrops(Users user, Crops crop, Double minTemp, Double maxTemp, 
-                     Double minHumidity, Double maxHumidity, 
-                     Double minSoilMoisture, Double maxSoilMoisture) {
+    // Field to store manual control state
+    @Column(name = "manual_control_enabled")
+    private Boolean manualControlEnabled;
+
+    // Getters and Setters
+
+    public Long getId() {
+        return id;
+    }
+
+    public void setId(Long id) {
+        this.id = id;
+    }
+
+    public Users getUser() {
+        return user;
+    }
+
+    public void setUser(Users user) {
         this.user = user;
+    }
+
+    public Crops getCrop() {
+        return crop;
+    }
+
+    public void setCrop(Crops crop) {
         this.crop = crop;
-        this.userMinTemperature = minTemp;
-        this.userMaxTemperature = maxTemp;
-        this.userMinHumidity = minHumidity;
-        this.userMaxHumidity = maxHumidity;
-        this.userMinSoilMoisture = minSoilMoisture;
-        this.userMaxSoilMoisture = maxSoilMoisture;
+    }
+
+    public Double getCustomMinTemperature() {
+        return customMinTemperature;
+    }
+
+    public void setCustomMinTemperature(Double customMinTemperature) {
+        this.customMinTemperature = customMinTemperature;
+    }
+
+    public Double getCustomMaxTemperature() {
+        return customMaxTemperature;
+    }
+
+    public void setCustomMaxTemperature(Double customMaxTemperature) {
+        this.customMaxTemperature = customMaxTemperature;
+    }
+
+    public Double getCustomMinHumidity() {
+        return customMinHumidity;
+    }
+
+    public void setCustomMinHumidity(Double customMinHumidity) {
+        this.customMinHumidity = customMinHumidity;
+    }
+
+    public Double getCustomMaxHumidity() {
+        return customMaxHumidity;
+    }
+
+    public void setCustomMaxHumidity(Double customMaxHumidity) {
+        this.customMaxHumidity = customMaxHumidity;
+    }
+
+    public Double getCustomMinSoilMoisture() {
+        return customMinSoilMoisture;
+    }
+
+    public void setCustomMinSoilMoisture(Double customMinSoilMoisture) {
+        this.customMinSoilMoisture = customMinSoilMoisture;
+    }
+
+    public Double getCustomMaxSoilMoisture() {
+        return customMaxSoilMoisture;
+    }
+
+    public void setCustomMaxSoilMoisture(Double customMaxSoilMoisture) {
+        this.customMaxSoilMoisture = customMaxSoilMoisture;
+    }
+
+    public LocalTime getCustomIrrigationStartTime() {
+        return customIrrigationStartTime;
+    }
+
+    public void setCustomIrrigationStartTime(LocalTime customIrrigationStartTime) {
+        this.customIrrigationStartTime = customIrrigationStartTime;
+    }
+
+    public LocalTime getCustomIrrigationEndTime() {
+        return customIrrigationEndTime;
+    }
+
+    public void setCustomIrrigationEndTime(LocalTime customIrrigationEndTime) {
+        this.customIrrigationEndTime = customIrrigationEndTime;
+    }
+
+    public Boolean isManualControlEnabled() {
+        return manualControlEnabled;
+    }
+
+    public void setManualControlEnabled(Boolean manualControlEnabled) {
+        this.manualControlEnabled = manualControlEnabled;
     }
 }
