@@ -3,14 +3,17 @@ package com.example.demo.Services;
 
 import com.example.demo.Entities.Crops;
 import com.example.demo.Entities.IrrigationSettings;
+import com.example.demo.Entities.SensorData;
 import com.example.demo.Entities.UserCrops;
 import com.example.demo.Entities.Users;
 import com.example.demo.Repositories.CropRepository;
 import com.example.demo.Repositories.IrrigationSettingsRepository;
+import com.example.demo.Repositories.SensorDataRepository;
 import com.example.demo.Repositories.UserCropRepository;
 import com.example.demo.Repositories.UserRepository;
 
-
+import org.springframework.data.domain.PageRequest;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
 
