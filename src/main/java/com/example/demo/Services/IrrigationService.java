@@ -184,7 +184,7 @@ public class IrrigationService {
         return settings.getIsManualControlEnabled() ? "Valve is OPEN" : "Valve is CLOSED";
     }
     
-    @Scheduled(fixedRate = 10000) // Runs every 10 seconds
+    @Scheduled(fixedRate = 20000) // Runs every 10 seconds
     public void scheduledAutomaticValveControl() {
         // Retrieve all user crops that require automated control
         List<UserCrops> userCropsList = userCropRepository.findAll();
@@ -248,10 +248,10 @@ public class IrrigationService {
                 }
             } 
             
-            // else {
-            //     String result = mosfetControlService.switchOffMosfet();
-            //     System.out.println("Outside irrigation window. Valve OFF: " + result);
-            // }
+             else {
+                 String result = mosfetControlService.switchOffMosfet();
+                 System.out.println("Outside irrigation window. Valve OFF: " + result);
+             }
             return "Control action executed";
         } else {
             return "No user found for this crop";
