@@ -1,6 +1,7 @@
 package com.example.demo.Controllers;
 
 
+import com.example.demo.Components.AutomaticValveControllerTimer;
 import com.example.demo.Services.IrrigationService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -71,7 +72,7 @@ public class IrrigationController {
     public ResponseEntity<String> automateValveControl(
             @RequestParam Long userId,
             @RequestParam Long cropId) {
-        String result = irrigationService.automaticValveControl(userId, cropId);
-        return ResponseEntity.ok(result);
+        AutomaticValveControllerTimer.startNewTimer(irrigationService, userId, cropId);
+        return ResponseEntity.ok("Automation started: old timer stopped and new one set for userId " + userId + " and cropId " + cropId);
     }
 }

@@ -1,6 +1,8 @@
 package com.example.demo.Entities;
 
 import jakarta.persistence.*;
+import org.hibernate.annotations.CreationTimestamp;
+
 import java.time.LocalDateTime;
 
 @Entity
@@ -11,25 +13,25 @@ public class Notification {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false)
     private String message;
 
-    @Column(nullable = false)
-    private LocalDateTime createdAt;
-
-    // Associate with a user; adjust mapping as needed.
     @ManyToOne
-    @JoinColumn(name = "user_id")
+    @JoinColumn(name = "user_id", nullable = false)
     private Users user;
 
-    public Notification() {
-        this.createdAt = LocalDateTime.now();
-    }
+    private boolean read = false;
+
+    @Column(name = "created_at", nullable = false, updatable = false)
+    @CreationTimestamp
+    private LocalDateTime createdAt;
+
+    // Constructors, getters, and setters
+    public Notification() {}
 
     public Notification(String message, Users user) {
         this.message = message;
         this.user = user;
-        this.createdAt = LocalDateTime.now();
+        this.read = false;
     }
 
     // Getters and setters
@@ -64,5 +66,13 @@ public class Notification {
 
     public void setUser(Users user) {
         this.user = user;
+    }
+
+    public void setRead(boolean read){
+        this.read = read;
+    }
+
+    public boolean getRead(){
+        return read;
     }
 }
