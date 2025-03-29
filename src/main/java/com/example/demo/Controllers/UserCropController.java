@@ -58,6 +58,8 @@ public class UserCropController {
         userCrop.setCustomMaxSoilMoisture(crop.getMaxSoilMoisture());
         userCrop.setCustomIrrigationStartTime(crop.getIrrigationStartTime());
         userCrop.setCustomIrrigationEndTime(crop.getIrrigationEndTime());
+        userCrop.setManualCloseEnabled(false);
+        userCrop.setManualOpenEnabled(false);
         
         userCropRepository.save(userCrop);
         return ResponseEntity.ok("Crop selected successfully for user!");

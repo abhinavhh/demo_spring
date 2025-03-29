@@ -133,5 +133,11 @@ public class SensorDataService {
         Optional<SensorData> latestData = sensorDataRepository.findTopByUserIdOrderByIdDesc(userId);
         return latestData.orElseThrow(() -> new RuntimeException("No sensor data found for user " + userId));
     }
-    
+    // In SensorDataService
+    public SensorData getLatestDataByUserAndSensorType(Long userId, String sensorType) {
+        Optional<SensorData> latestData = sensorDataRepository.findTopByUserIdAndSensorTypeOrderByIdDesc(userId, sensorType);
+        return latestData.orElse(null);
+    }
+
+
 }

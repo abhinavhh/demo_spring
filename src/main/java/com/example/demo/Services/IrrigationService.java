@@ -1,18 +1,17 @@
 package com.example.demo.Services;
 
-
 import com.example.demo.Entities.Crops;
 import com.example.demo.Entities.IrrigationSettings;
+import com.example.demo.Entities.SensorData;
 import com.example.demo.Entities.UserCrops;
 import com.example.demo.Entities.Users;
 import com.example.demo.Repositories.CropRepository;
 import com.example.demo.Repositories.IrrigationSettingsRepository;
+import com.example.demo.Repositories.SensorDataRepository;
 import com.example.demo.Repositories.UserCropRepository;
 import com.example.demo.Repositories.UserRepository;
-
-
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
-
 
 import java.time.LocalTime;
 import java.util.List;
@@ -75,11 +74,11 @@ public class IrrigationService {
         }
         IrrigationSettings settings = optionalSettings.get();
         return "Crop: " + settings.getCrop().getName() +
-               "\nStart Time: " + settings.getStartTime() +
-               "\nEnd Time: " + settings.getEndTime();
+                "\nStart Time: " + settings.getStartTime() +
+                "\nEnd Time: " + settings.getEndTime();
     }
 
-    // Analyze sensor data and determine if irrigation should occur, based on the user’s settings.
+    // Analyze sensor data and determine if irrigation should occur, based on the user's settings.
     public String analyzeAndControlIrrigation(Long userId, Long cropId) {
         Optional<IrrigationSettings> optionalSettings = irrigationSettingsRepository.findByCropIdAndUserId(cropId, userId);
         if (optionalSettings.isEmpty()) {
@@ -106,14 +105,14 @@ public class IrrigationService {
         double humidity = Math.random() * 100;
 
         result.append("Current Conditions:\n")
-              .append("Soil Moisture: ").append(soilMoisture).append(" (Min: ")
-              .append(settings.getCrop().getMinSoilMoisture()).append(")\n")
-              .append("Temperature: ").append(temperature).append(" (Min: ")
-              .append(settings.getCrop().getMinTemperature()).append(", Max: ")
-              .append(settings.getCrop().getMaxTemperature()).append(")\n")
-              .append("Humidity: ").append(humidity).append(" (Min: ")
-              .append(settings.getCrop().getMinHumidity()).append(", Max: ")
-              .append(settings.getCrop().getMaxHumidity()).append(")\n");
+                .append("Soil Moisture: ").append(soilMoisture).append(" (Min: ")
+                .append(settings.getCrop().getMinSoilMoisture()).append(")\n")
+                .append("Temperature: ").append(temperature).append(" (Min: ")
+                .append(settings.getCrop().getMinTemperature()).append(", Max: ")
+                .append(settings.getCrop().getMaxTemperature()).append(")\n")
+                .append("Humidity: ").append(humidity).append(" (Min: ")
+                .append(settings.getCrop().getMinHumidity()).append(", Max: ")
+                .append(settings.getCrop().getMaxHumidity()).append(")\n");
 
         boolean valveShouldOpen = false;
         if (soilMoisture < settings.getCrop().getMinSoilMoisture()) {
@@ -150,21 +149,21 @@ public class IrrigationService {
     }
 
     // Allow manual control of the valve for a specific user and crop.
-    public void manualValveControl(Long userId, Long cropId, boolean openValve) {
+    public void manualValveControl(Long userId, Long cropId, boolean open, boolean close) {
         Optional<UserCrops> optionalSettings = userCropRepository.findByUserIdAndCropId(userId, cropId);
         if (optionalSettings.isEmpty()) {
-            throw new RuntimeException("crop settings not found for this user and crop.");
+            throw new RuntimeException("Crop settings not found for this user and crop.");
         }
         UserCrops userCrop = optionalSettings.get();
-        userCrop.setManualControlEnabled(openValve);
+        userCrop.setManualOpenEnabled(open);
+        userCrop.setManualCloseEnabled(close);
+
         userCropRepository.save(userCrop);
-        if (openValve) {
+        if (open) {
             String result = mosfetControlService.switchOnMosfet();
-            // Optionally log or process result
             System.out.println("MOSFET switch on result: " + result);
         } else {
             String result = mosfetControlService.switchOffMosfet();
-            // Optionally log or process result
             System.out.println("MOSFET switch off result: " + result);
         }
     }
@@ -178,72 +177,82 @@ public class IrrigationService {
         IrrigationSettings settings = optionalSettings.get();
         return settings.getIsManualControlEnabled() ? "Valve is OPEN" : "Valve is CLOSED";
     }
-    
-    @Scheduled(fixedRate = 20000) // Runs every 10 seconds
-    public void scheduledAutomaticValveControl() {
-        // Retrieve all user crops that require automated control
-        List<UserCrops> userCropsList = userCropRepository.findAll();
-        for (UserCrops userCrops : userCropsList) {
-            Long userId = userCrops.getUser().getId();
-            Long cropId = userCrops.getCrop().getId();
-            automaticValveControl(userId, cropId);
-        }
-    }
-    // automatic valve open code
+
+    // Automatic valve control code
     public String automaticValveControl(Long userId, Long cropId) {
         Optional<UserCrops> autoSettings = userCropRepository.findByUserIdAndCropId(userId, cropId);
-        if (autoSettings.isPresent()) {
-            UserCrops userCrops = autoSettings.get();
-            LocalTime start = userCrops.getCustomIrrigationStartTime();
-            LocalTime end = userCrops.getCustomIrrigationEndTime();
-            LocalTime now = LocalTime.now();
+        if (!autoSettings.isPresent()) {
+            return "No user found for this crop";
+        }
+        System.out.println("Usedid "+userId +"Crop id : "+ cropId);
+        UserCrops userCrops = autoSettings.get();
 
-            // Check if current time is within the irrigation window
+        // Retrieve the latest sensor data (expecting readings for Temperature, Humidity, SoilMoisture)
+        List<SensorData> sensorDataList = sensorDataRepository.findLatestSensorData(PageRequest.of(0, 4));
+        if (sensorDataList.isEmpty()) {
+            System.out.println("No sensor data available.");
+            return "No sensor data available.";
+        }
+
+        Double temperature = null;
+        Double humidity = null;
+        Double soilMoisture = null;
+
+        // Process sensor data and assign values based on sensor type.
+        for (SensorData data : sensorDataList) {
+            System.out.println("Sensor Type: " + data.getSensorType() + ", Value: " + data.getValue());
+            String sensorTypeNormalized = data.getSensorType().trim().toLowerCase();
+            if ("temperature".equals(sensorTypeNormalized)) {
+                temperature = data.getValue();
+            } else if ("humidity".equals(sensorTypeNormalized)) {
+                humidity = data.getValue();
+            } else if ("soilmoisture".equals(sensorTypeNormalized)) {
+                soilMoisture = data.getValue();
+            }
+        }
+
+        // Ensure that all required sensor values have been obtained.
+        if (temperature == null || humidity == null || soilMoisture == null) {
+            System.out.println("Incomplete sensor data.");
+            return "Incomplete sensor data.";
+        }
+
+        // Evaluate sensor readings against user crop thresholds.
+        boolean withinTempRange = temperature >= userCrops.getCustomMinTemperature() &&
+                temperature <= userCrops.getCustomMaxTemperature();
+        boolean withinHumidityRange = humidity >= userCrops.getCustomMinHumidity() &&
+                humidity <= userCrops.getCustomMaxHumidity();
+        // Trigger irrigation if soil moisture is below the minimum threshold.
+        boolean soilMoistureLow = soilMoisture > userCrops.getCustomMaxSoilMoisture();
+
+        // Check if conditions are met for automatic irrigation.
+        boolean triggerIrrigation = withinTempRange && withinHumidityRange && soilMoistureLow;
+
+        // Manual control override check.
+        if (userCrops.isManualOpenEnabled() || userCrops.isManualCloseEnabled()) {
+            System.out.println("Manual control active for userId: " + userId + ", cropId: " + cropId + ". Skipping auto control.");
+            return "Manual control active, skipping auto control";
+        }
+
+        // Check if current time is within the configured irrigation window.
+        LocalTime start = userCrops.getCustomIrrigationStartTime();
+        LocalTime end = userCrops.getCustomIrrigationEndTime();
+        LocalTime now = LocalTime.now();
+
+        if (triggerIrrigation) {
             if (now.isAfter(start) && now.isBefore(end)) {
-                // Retrieve latest sensor data, expecting three entries: Temperature, Humidity, SoilMoisture
-                List<SensorData> sensorDataList = sensorDataRepository.findLatestSensorData(PageRequest.of(0, 4));
-                if (sensorDataList.isEmpty()) {
-                    System.out.println("No sensor data available.");
-                } else {
-                    Double temperature = null;
-                    Double humidity = null;
-                    Double soilMoisture = null;
-                    for (SensorData data : sensorDataList) {
-                        System.out.println("Sensor Type: " + data.getSensorType() + ", Value: " + data.getValue());
-                        String sensorTypeNormalized = data.getSensorType().trim().toLowerCase();
-                        if ("temperature".equals(sensorTypeNormalized)) {
-                            temperature = data.getValue();
-                        } else if ("humidity".equals(sensorTypeNormalized)) {
-                            humidity = data.getValue();
-                        } else if ("soilmoisture".equals(sensorTypeNormalized)) {
-                            soilMoisture = data.getValue();
-                        }
-                    }
-                    if (temperature == null || humidity == null || soilMoisture == null) {
-                        System.out.println("Incomplete sensor data.");
-                    } else {
-                        boolean withinTempRange = temperature >= userCrops.getCustomMinTemperature() &&
-                                temperature <= userCrops.getCustomMaxTemperature();
-                        boolean withinHumidityRange = humidity >= userCrops.getCustomMinHumidity() &&
-                                humidity <= userCrops.getCustomMaxHumidity();
-                        boolean withinSoilMoistureRange = soilMoisture >= 65;
-
-                        if (withinTempRange && withinHumidityRange && withinSoilMoistureRange) {
-                            String result = mosfetControlService.switchOnMosfet();
-                            System.out.println("Valve ON: " + result);
-                        } else {
-                            String result = mosfetControlService.switchOffMosfet();
-                            System.out.println("Valve OFF: " + result);
-                        }
-                    }
-                }
+                String result = mosfetControlService.switchOnMosfet();
+                System.out.println("Switching the Valve ON: " + result);
+                return "Valve switched on";
             } else {
                 String result = mosfetControlService.switchOffMosfet();
-                System.out.println("Outside irrigation window. Valve OFF: " + result);
+                System.out.println("Outside irrigation time window. Valve OFF: " + result);
+                return "Outside irrigation time window. Valve switched off";
             }
-            return "Control action executed";
         } else {
-            return "No user found for this crop";
+            String result = mosfetControlService.switchOffMosfet();
+            System.out.println("Sensor readings out of range. Valve OFF: " + result);
+            return "Sensor readings out of range. Valve switched off";
         }
     }
 }
