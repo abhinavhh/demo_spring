@@ -30,7 +30,7 @@ public class UserCrop {
 
     public UserCrop() {}
 
-    public UserCrop(Users user, Crops crop, Double minTemperature, Double maxTemperature, Double minHumidity, 
+    public UserCrop(Users user, Crops crop, Double minTemperature, Double maxTemperature, Double minHumidity,
     Double maxHumidity, Double minSoilMoisture, Double maxSoilMoisture) {
         this.user = user;
         this.crop = crop;
