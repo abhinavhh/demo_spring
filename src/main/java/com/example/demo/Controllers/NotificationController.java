@@ -1,12 +1,8 @@
 package com.example.demo.Controllers;
 
+import com.example.demo.Components.NotificationTimer;
 import com.example.demo.Entities.Notification;
-import com.example.demo.Entities.Users;
-import com.example.demo.Repositories.NotificationRepository;
-import com.example.demo.Repositories.UserRepository;
 import com.example.demo.Services.NotificationService;
-import com.example.demo.Services.SensorDataService;
-
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -20,75 +16,39 @@ import java.util.Map;
 public class NotificationController {
 
     private final NotificationService notificationService;
-    private final UserRepository userRepository;
-    private final SensorDataService sensorDataService;
-    private final NotificationRepository notificationRepository;
 
-    public NotificationController(NotificationService notificationService,
-                                  UserRepository userRepository,
-                                  SensorDataService sensorDataService,
-                                  NotificationRepository notificationRepository) {
+    public NotificationController(NotificationService notificationService) {
         this.notificationService = notificationService;
-        this.userRepository = userRepository;
-        this.sensorDataService = sensorDataService;
-        this.notificationRepository = notificationRepository;
     }
 
-    @PatchMapping("/{notificationId}/read")
-    public ResponseEntity<Void> markNotificationAsRead(
-            @PathVariable Long notificationId,
-            @RequestParam Long userId
-    ) {
-        Notification notification = notificationRepository.findById(notificationId)
-                .orElseThrow(() -> new RuntimeException("Notification not found"));
-
-        // Ensure the notification belongs to the user
-        if (!notification.getUser().getId().equals(userId)) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
-        }
-
-        notification.setRead(true);
-        notificationRepository.save(notification);
-        return ResponseEntity.ok().build();
-    }
-
-    // GET endpoint for fetching notifications by userId
+    // GET /api/notifications?userId={userId}
     @GetMapping
     public ResponseEntity<List<Notification>> getNotifications(@RequestParam Long userId) {
-        if (userId == null) {
-            return ResponseEntity.badRequest().build();
-        }
-        List<Notification> notifications = notificationService.getNotificationsForUser(userId);
-        return ResponseEntity.ok(notifications);
+        List<Notification> notifications = notificationService.getNotificationsByUserId(userId);
+        return new ResponseEntity<>(notifications, HttpStatus.OK);
     }
 
-    // POST endpoint to create a new notification manually
-    @PostMapping
-    public ResponseEntity<Notification> createNotification(@RequestBody Map<String, String> payload) {
-        String message = payload.get("message");
-        String userIdStr = payload.get("userId");
-        if (userIdStr == null) {
-            return ResponseEntity.badRequest().build();
+    // PATCH /api/notifications/{notificationId}/read
+    @PatchMapping("/{notificationId}/read")
+    public ResponseEntity<Void> markAsRead(@PathVariable Long notificationId,
+                                           @RequestBody Map<String, Object> payload) {
+        try {
+            Long userId = Long.valueOf(payload.get("userId").toString());
+            boolean updated = notificationService.markNotificationAsRead(notificationId, userId);
+            if (updated) {
+                return new ResponseEntity<>(HttpStatus.OK);
+            }
+        } catch (Exception e) {
+            // Optionally log the error
         }
-        Long userId = Long.valueOf(userIdStr);
-        Users user = userRepository.findById(userId)
-                .orElseThrow(() -> new RuntimeException("User not found"));
-        Notification notification = notificationService.createNotification(message, user);
-        return ResponseEntity.ok(notification);
+        return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
     }
 
-    // New endpoint to check sensor data and notify the user based on latest sensor values
+    // POST /api/notifications/check?userId={userId}
+    // This endpoint triggers the sensor data check for the given user and returns updated notifications.
     @PostMapping("/check")
-    public ResponseEntity<List<Notification>> checkSensorAndNotify(@RequestParam Long userId) {
-        if (userId == null) {
-            return ResponseEntity.badRequest().build();
-        }
-        Users user = userRepository.findById(userId)
-                .orElseThrow(() -> new RuntimeException("User not found"));
-        // Call service layer to check sensor data and notify if thresholds are breached
-        notificationService.checkLatestSensorDataAndNotify(user, sensorDataService);
-        // Return the updated list of notifications for the user
-        List<Notification> notifications = notificationService.getNotificationsForUser(userId);
-        return ResponseEntity.ok(notifications);
+    public ResponseEntity<List<Notification>> checkNotifications(@RequestParam Long userId) {
+        List<Notification> notifications = NotificationTimer.startNewTimer(notificationService, userId);
+        return new ResponseEntity<>(notifications, HttpStatus.OK);
     }
 }
