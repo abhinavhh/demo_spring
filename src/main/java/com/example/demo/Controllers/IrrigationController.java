@@ -5,7 +5,7 @@ import com.example.demo.Components.AutomaticValveControllerTimer;
 import com.example.demo.Services.IrrigationService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-@CrossOrigin(origins = "http://localhost:5173")
+@CrossOrigin(origins = "https://smart-irrigation-rho.vercel.app")
 @RestController
 @RequestMapping("/api/irrigation")
 public class IrrigationController {
