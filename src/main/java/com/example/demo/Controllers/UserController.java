@@ -18,7 +18,7 @@ import com.example.demo.Entities.Users;
 import com.example.demo.Repositories.UserRepository;
 import com.example.demo.Services.UserService;
 
-@CrossOrigin(origins = "http://localhost:5173")
+@CrossOrigin(origins = "https://smart-irrigation-rho.vercel.app")
 
 @RestController
 @RequestMapping("/api/user")
