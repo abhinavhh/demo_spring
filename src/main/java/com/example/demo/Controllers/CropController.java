@@ -10,7 +10,7 @@ import java.util.Map;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-@CrossOrigin(origins = "http://localhost:5173")
+@CrossOrigin(origins = "https://smart-irrigation-rho.vercel.app/")
 @RestController
 @RequestMapping("/api/crops")
 public class CropController {
