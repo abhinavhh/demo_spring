@@ -33,12 +33,8 @@
 	<dependencies>
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
-			<artifactId>spring-boot-starter</artifactId> <!-- Replace with your desired version -->
+			<artifactId>spring-boot-starter</artifactId>
     	</dependency>
-		<dependency>
-			<groupId>org.springframework.boot</groupId>
-			<artifactId>spring-boot-starter-web</artifactId>
-		</dependency>
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-actuator</artifactId>
@@ -48,19 +44,8 @@
 			<artifactId>spring-boot-starter-data-jpa</artifactId>
 		</dependency>
 		<dependency>
-			<groupId>me.paulschwarz</groupId>
-			<artifactId>spring-dotenv</artifactId>
-			<version>2.3.0</version>
-		</dependency>
-
-		<dependency>
 			<groupId>com.fasterxml.jackson.core</groupId>
 			<artifactId>jackson-databind</artifactId>
-		</dependency>
-		<dependency>
-			<groupId>me.paulschwarz</groupId>
-			<artifactId>spring-dotenv</artifactId>
-			<version>2.3.0</version>
 		</dependency>
 		<dependency>
 			<groupId>io.github.cdimascio</groupId>
@@ -90,18 +75,6 @@
 			<version>0.11.5</version>
 			<scope>runtime</scope>
 		</dependency>
-<!-- 		<dependency>
-			<groupId>org.springframework.boot</groupId>
-			<artifactId>spring-boot-starter-security</artifactId>
-		</dependency>
-		<dependency>
-			<groupId>org.springframework.security</groupId>
-			<artifactId>spring-security-web</artifactId>
-		</dependency>
-		<dependency>
-			<groupId>org.springframework.security</groupId>
-			<artifactId>spring-security-config</artifactId>
-		</dependency> -->
 
 		<dependency>
 			<groupId>io.jsonwebtoken</groupId>
@@ -153,7 +126,7 @@
 				<configuration>
 					<annotationProcessorPaths>
 						<path>
-							<groupId>org.projectlombok</groupId>
+							<groupId>org.project lombok</groupId>
 							<artifactId>lombok</artifactId>
 						</path>
 					</annotationProcessorPaths>
@@ -165,7 +138,7 @@
 				<configuration>
 					<excludes>
 						<exclude>
-							<groupId>org.projectlombok</groupId>
+							<groupId>org.project lombok</groupId>
 							<artifactId>lombok</artifactId>
 						</exclude>
 					</excludes>

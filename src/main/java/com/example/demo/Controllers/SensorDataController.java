@@ -12,7 +12,6 @@ import org.springframework.web.bind.annotation.*;
 
 import com.example.demo.Entities.SensorData;
 import com.example.demo.Services.SensorDataService;
-@CrossOrigin(origins = "https://smart-irrigation-rho.vercel.app")
 @RestController
 @RequestMapping("/api/sensor")
 public class SensorDataController {
