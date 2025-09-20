@@ -4,15 +4,7 @@ import java.util.Map;
 import java.util.Optional;
 
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.CrossOrigin;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import com.example.demo.Entities.Users;
 import com.example.demo.Repositories.UserRepository;
@@ -30,13 +22,13 @@ public class UserController {
         this.userService = userService;
     }
 
-    @GetMapping("/{username}")
-    public ResponseEntity<Users> getUserProfile(@PathVariable String username) {
-        Optional<Users> user = userRepository.findByUsername(username);
+    @GetMapping("/{userId}")
+    public ResponseEntity<Users> getUserProfile(@PathVariable Long userId) {
+        
+        Optional<Users> user = userRepository.findById(userId);
         if (user.isPresent()) {
             return ResponseEntity.ok(user.get());
         } else {
-            System.out.println("User not found for username: " + username);
             return ResponseEntity.notFound().build();
         }
     }

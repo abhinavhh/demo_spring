@@ -6,21 +6,33 @@ import java.util.Optional;
 import java.util.Random;
 import java.util.concurrent.ConcurrentHashMap;
 
+import com.example.demo.Components.JwtUtils;
+import com.example.demo.DTO.AuthResponse;
+import com.example.demo.DTO.UserDTO;
+import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.userdetails.User;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import com.example.demo.Entities.Users;
 import com.example.demo.Repositories.UserRepository;
 
 @Service
+@RequiredArgsConstructor
 public class UserService {
     private final UserRepository userRepository;
     private final JavaMailSender emailSender;
+    private final PasswordEncoder passwordEncoder;
     private final Map<String, OTPData> otpStorage = new ConcurrentHashMap<>();
     private static final int OTP_EXPIRY_MINUTES = 5;
-
+    private final AuthenticationManager authenticationManager;
+    private final JwtUtils jwtUtils;
     // Inner class for OTP data
     private static class OTPData {
         private final String otp;
@@ -40,17 +52,43 @@ public class UserService {
         }
     }
 
-    public UserService(UserRepository userRepository, JavaMailSender emailSender) {
-        this.userRepository = userRepository;
-        this.emailSender = emailSender;
-    }
+//    public UserService(UserRepository userRepository, JavaMailSender emailSender, PasswordEncoder passwordEncoder) {
+//        this.userRepository = userRepository;
+//        this.emailSender = emailSender;
+//        this.passwordEncoder = passwordEncoder;
+//    }
 
-    public String registerUser(Users user) {
-        if (userRepository.findByUsername(user.getUsername()).isPresent()) {
+    public String register(UserDTO request) {
+        if (userRepository.findByUsername(request.getUsername()).isPresent()) {
             return "Username already exists";
         }
+        if (userRepository.findByEmail(request.getEmail()).isPresent()) {
+            return "Email already exists";
+        }
+
+        Users user = Users.builder()
+                .username(request.getUsername())
+                .email(request.getEmail())
+                .role("USER")
+                .password(passwordEncoder.encode(request.getPassword()))
+                .build();
+
         userRepository.save(user);
-        return "User Registration successful";
+        return "User registered successfully";
+    }
+
+    public AuthResponse login(String username, String password) {
+        Authentication authentication = authenticationManager.authenticate(
+                new UsernamePasswordAuthenticationToken(username, password)
+        );
+
+        Users user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        String accessToken = jwtUtils.generateToken(username, user.getId(), user.getRole());
+        String refreshToken = jwtUtils.generateRefreshToken(username);
+
+        return new AuthResponse(accessToken, refreshToken, user.getId());
     }
 
     public Optional<Users> getUsername(String username) {

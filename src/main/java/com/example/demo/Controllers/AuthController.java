@@ -5,13 +5,20 @@ import java.util.Map;
 import java.util.Optional;
 
 import com.example.demo.Components.JwtUtils;
+import com.example.demo.DTO.UserDTO;
+import jakarta.validation.Valid;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 import com.example.demo.Entities.Users;
 import com.example.demo.Repositories.UserRepository;
 import com.example.demo.Services.UserService;
 
+@Slf4j
 @RestController
 @RequestMapping("/api/auth")
 public class AuthController {
@@ -19,20 +26,21 @@ public class AuthController {
     private final UserRepository userRepository;
     private final UserService userService;
     private final JwtUtils jwtUtils;
-    public AuthController(UserRepository userRepository, UserService userService, JwtUtils jwtUtils) {
+    private final AuthenticationManager authenticationManager;
+
+    public AuthController(UserRepository userRepository, UserService userService, JwtUtils jwtUtils, AuthenticationManager authenticationManager) {
         this.userRepository = userRepository;
         this.userService = userService;
         this.jwtUtils = jwtUtils;
+        this.authenticationManager = authenticationManager;
     }
 
     @PostMapping("/register")
-    public ResponseEntity<?> register(@RequestBody Users user) {
-        String result = userService.registerUser(user);
+    public ResponseEntity<?> register(@Valid @RequestBody UserDTO request){
+        String result = userService.register(request);
         // Optionally, you can return the created user details (except password) if needed.
         Map<String, Object> response = new HashMap<>();
         response.put("message", result);
-        response.put("username", user.getUsername());
-        response.put("email", user.getEmail());
         return ResponseEntity.ok(response);
     }
 
@@ -40,23 +48,26 @@ public class AuthController {
     public ResponseEntity<?> login(@RequestBody Map<String, String> requestBody) {
         String username = requestBody.get("username");
         String password = requestBody.get("password");
+        System.out.println(requestBody);
+
+        Authentication authentication = authenticationManager.authenticate(
+                new UsernamePasswordAuthenticationToken(username, password)
+        );
 
         Optional<Users> userOpt = userRepository.findByUsername(username);
         if (userOpt.isEmpty()) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body("User not found");
         }
-        
+
         Users user = userOpt.get();
-        if (user.getPassword().equals(password)) {
+
             // Build a response containing user details so that client can use userId for further requests.
-            String token = jwtUtils.generateToken(username, user.getId());
-            Map<String, Object> response = new HashMap<>();
-            response.put("message", "Login successful");
-            response.put("token", token);
-            return ResponseEntity.ok(response);
-        } else {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid credentials");
-        }
+        String token = jwtUtils.generateToken(username, user.getId(), user.getRole());
+        Map<String, Object> response = new HashMap<>();
+        response.put("message", "Login successful");
+        response.put("token", token);
+        response.put("userId", user.getId());
+        return ResponseEntity.ok(response);
     }
 
     @PostMapping("/forgot-password")
