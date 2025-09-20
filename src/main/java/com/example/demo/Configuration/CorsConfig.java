@@ -15,7 +15,7 @@ public class CorsConfig {
     public CorsFilter corsFilter() {
         CorsConfiguration config = new CorsConfiguration();
         config.setAllowCredentials(true);
-        config.setAllowedOrigins(List.of("http://localhost:5173"));
+        config.setAllowedOrigins(List.of("https://smart-irrigation-rho.vercel.app/", "http://localhost:5173"));
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         config.setAllowedHeaders(List.of("*"));
         config.setExposedHeaders(List.of("Authorization")); // if you want to expose token
